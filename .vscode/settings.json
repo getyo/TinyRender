@@ -1,0 +1,4 @@
+{
+    "C_Cpp.errorSquiggles": "enabled",  // 或者被改成了 "Disabled"
+"C_Cpp.diagnostics.compiler": "enabled" // 或者是关闭了编译器诊断
+}

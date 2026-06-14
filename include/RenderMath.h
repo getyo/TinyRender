@@ -113,7 +113,7 @@ struct Mat2D {
 
  
     // ==================== 2D 向量实现 ====================
-    inline float Vec2D::DotProduct(const Vec2D& a, const Vec2D& b) {
+    inline float DotProduct(const Vec2D& a, const Vec2D& b) {
         return a.x * b.x + a.y * b.y;
     }
     inline float CrossProduct(const Vec2D& a, const Vec2D& b) {
@@ -125,6 +125,7 @@ struct Mat2D {
     inline Vec2D operator-(const Vec2D& a, const Vec2D& b) {
         return Vec2D(a.x - b.x, a.y - b.y);
     }
+    
     
     // ==================== 3D 向量实现 ====================
     inline float DotProduct(const Vec3D& a, const Vec3D& b) {
@@ -143,6 +144,7 @@ struct Mat2D {
     inline Vec3D operator-(const Vec3D& a, const Vec3D& b) {
         return Vec3D(a.x - b.x, a.y - b.y, a.z - b.z);
     }
+   
 
     // ==================== 4D 向量实现 ====================
     inline float DotProduct(const Vec4D& a, const Vec4D& b) {
@@ -154,7 +156,7 @@ struct Mat2D {
     inline Vec4D operator-(const Vec4D& a, const Vec4D& b) {
         return Vec4D(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w);
     }
-
+    
        // ==================== 2D 矩阵实现 ====================
 
     inline Mat2D::Mat2D(const Vec2D& col1, const Vec2D& col2) {

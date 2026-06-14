@@ -39,11 +39,11 @@ bool FileManager::ReadMeshData(const std::string filePath, std::vector<MeshData>
         int totalIndices = indices.size();
         
         meshDatas[i].vertices.resize(totalIndices);
-        meshDatas[i].trangles.resize(totalIndices / 3);
+        meshDatas[i].triangles.resize(totalIndices / 3);
         
         // 对每个三角形进行组装
         for (int j = 0; j < totalIndices; j += 3) {
-            auto& curTriangle = meshDatas[i].trangles[j / 3];
+            auto& curTriangle = meshDatas[i].triangles[j / 3];
             
             // 防御未指定材质的 -1 边界情况
             int matId = shapes[i].mesh.material_ids[j / 3];

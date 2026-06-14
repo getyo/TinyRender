@@ -1,6 +1,7 @@
 #include <iostream>
 #include "Projection.h"
 #include "FlieManager.h"
+#include "Resterization.h"
 
 int main(){
     int widget = 1024,height = 1024;
@@ -16,6 +17,8 @@ int main(){
     RenderMath::Vec3D lightPos(0,0,-100);
     RenderMath::Vec3D objPos(0,0,-200);
     auto proj = Projection::ProjectionFactory(cameraPos,lightPos,objPos);
-    proj->Project(shapes[0].vertices);
+    proj->Project(shapes[0].vertices,shapes[0].triangles);
+    auto rester = Resterization::RasterizationFactory();
+    rester->Rasterize(shapes[0].vertices,shapes[0].triangles,t);
     return 0;
 }

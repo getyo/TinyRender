@@ -9,6 +9,13 @@ struct Vertex
     RenderMath::Vec2D textureUV;
     //投影之后的坐标,前两项/w之后就是标准屏幕空间坐标
     RenderMath::Vec4D posProj;
+    //法线和法线贴图处理要用的
+    RenderMath::Vec3D normal = {0,0,0};
+    RenderMath::Vec3D tangent = {0,0,0};
+    RenderMath::Vec3D bitangent = {0,0,0};
+    void divW(){
+        
+    }
 };
 
 struct Triangle
@@ -21,7 +28,7 @@ struct Triangle
 struct MeshData
 {
     std::vector<Vertex> vertices;
-    std::vector<Triangle> trangles;
+    std::vector<Triangle> triangles;
 };
 
 struct Color{

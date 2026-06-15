@@ -71,7 +71,9 @@ void Projection::Project(std::vector<Vertex> &vertice,const std::vector<Triangle
         // 2. Tangent 施密特正交化
         v.tangent = RenderMath::Normalize(v.tangent - v.normal * RenderMath::DotProduct(v.normal, v.tangent));
 
-        // 3. 修正B 
+        // 3. 修正B ,因为你默认用的右手系，但是纹理本身是多张平铺在物体表面，所以处于一个物体的对称面
+        //纹理的变化方向是反的，当你确定了一个tangent，normal朝外之后，bitangent叉积出来可能是左手系，
+        //所以你需要反转
         RenderMath::Vec3D stdB = RenderMath::CrossProduct(v.normal, v.tangent);
         float w = (RenderMath::DotProduct(stdB, v.bitangent) < 0.0f) ? -1.0f : 1.0f;
         v.bitangent = stdB * w; 

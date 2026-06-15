@@ -24,7 +24,7 @@ struct Fragment{
     ORM orm;
     int trianglePtr;
     float depth;
-    float invW;
+    float w;
     BarycentricCoord bcCoor;
     
 };

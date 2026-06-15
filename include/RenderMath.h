@@ -1,6 +1,11 @@
 #pragma once
 #include <algorithm>
 #include <cmath>
+#include <iostream>
+#include <iomanip>
+
+struct Color;
+struct ORM;
 namespace RenderMath {
     constexpr float PI = 3.14159265358979323846f;
     // 💡 角度转弧度系数： Deg * (PI / 180)
@@ -19,13 +24,16 @@ namespace RenderMath {
         friend Vec2D operator+(const Vec2D& a, const Vec2D& b);
         friend Vec2D operator-(const Vec2D& a, const Vec2D& b);
     };
-
+    
     struct Vec3D  {
         float x;
         float y;
         float z;
         Vec3D(float x = 0.0f, float y = 0.0f, float z = 0.0f) : x(x), y(y), z(z) {}
-
+        Vec3D(const Color&);
+        Vec3D(const ORM&);
+        Vec3D operator=(const Color&);
+        Vec3D operator=(const ORM&);
         friend float DotProduct(const Vec3D& a, const Vec3D& b);
         // 修正：3D 叉积必须返回 Vec3D，而不是原声明中的 float！
         friend Vec3D CrossProduct(const Vec3D& a, const Vec3D& b); 
@@ -497,5 +505,69 @@ struct Mat2D {
 
     inline Vec4D operator*(float scalar, const Vec4D& v) {
         return Vec4D(v.x * scalar, v.y * scalar, v.z * scalar, v.w * scalar);
+    }
+
+    // ==================== 双线性插值 ====================
+    inline float BlinearInterploation(const Vec2D point,float leftTop,float rightTop,float leftButtom,float rightButtom)
+    {
+        float fracOfpx = point.x - std::floor(point.x);
+        float fracOfpy = point.y - std::floor(point.y);
+
+        float f0 = leftTop + fracOfpx*(rightTop - leftTop);
+        float f1 = leftButtom + fracOfpx*(rightButtom - leftButtom);
+        return f0 + fracOfpy*(f1 - f0);
+    }
+
+    inline Vec2D BlinearInterploation(const Vec2D point, 
+                                      const Vec2D leftTop, const Vec2D rightTop, 
+                                      const Vec2D leftButtom, const Vec2D rightButtom) {
+        float fracOfpx = point.x - std::floor(point.x);
+        float fracOfpy = point.y - std::floor(point.y);
+
+        Vec2D f0 = leftTop + (rightTop - leftTop) * fracOfpx;
+        Vec2D f1 = leftButtom + (rightButtom - leftButtom) * fracOfpx;
+        return f0 + (f1 - f0) * fracOfpy;
+    }
+
+    inline Vec3D BlinearInterploation(const Vec2D point, 
+                                      const Vec3D leftTop, const Vec3D rightTop, 
+                                      const Vec3D leftButtom, const Vec3D rightButtom) {
+        float fracOfpx = point.x - std::floor(point.x);
+        float fracOfpy = point.y - std::floor(point.y);
+
+        Vec3D f0 = leftTop + (rightTop - leftTop) * fracOfpx;
+        Vec3D f1 = leftButtom + (rightButtom - leftButtom) * fracOfpx;
+        return f0 + (f1 - f0) * fracOfpy;
+    }
+
+    // ==================== 格式化输出 ====================
+    // 格式化输出 Mat2D
+    inline void PrintMat2D(const Mat2D& m) {
+        for (int i = 0; i < 2; ++i) {
+            for (int j = 0; j < 2; ++j) {
+                std::cout << std::fixed << std::setprecision(4) << m.data[i][j] << " ";
+            }
+            std::cout << std::endl;
+        }
+    }
+
+    // 格式化输出 Mat3D
+    inline void PrintMat3D(const Mat3D& m) {
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                std::cout << std::fixed << std::setprecision(4) << m.data[i][j] << " ";
+            }
+            std::cout << std::endl;
+        }
+    }
+
+    // 格式化输出 Mat4D
+    inline void PrintMat4D(const Mat4D& m) {
+        for (int i = 0; i < 4; ++i) {
+            for (int j = 0; j < 4; ++j) {
+                std::cout << std::fixed << std::setprecision(4) << m.data[i][j] << " ";
+            }
+            std::cout << std::endl;
+        }
     }
 }

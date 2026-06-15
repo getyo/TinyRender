@@ -88,6 +88,8 @@ bool FileManager::ReadTexture(const std::string normalPath,const std::string col
 
     auto &colorCache = texture.rgb;
     colorCache.resize(height * width);
+    texture.rgbH = height;
+    texture.rgbW = width;
     for(int i = 0;i < height; ++i){
         for(int j = 0;j < width;++j){
             int itPos = i*width + j ;
@@ -110,6 +112,8 @@ bool FileManager::ReadTexture(const std::string normalPath,const std::string col
 
     auto &normalCache = texture.normal;
     normalCache.resize(height * width);
+    texture.normalH = height;
+    texture.normalW = width;
     for(int i = 0;i < height; ++i){
         for(int j = 0;j < width;++j){
             int itPos = i*width + j ;
@@ -132,6 +136,8 @@ bool FileManager::ReadTexture(const std::string normalPath,const std::string col
 
     auto &ormCache = texture.orm;
     ormCache.resize(height * width);
+    texture.ormH = height;
+    texture.ormW = width;
     for(int i = 0;i < height; ++i){
         for(int j = 0;j < width;++j){
             int itPos = i*width + j ;

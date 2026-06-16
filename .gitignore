@@ -40,7 +40,7 @@
 *.app
 
 # Build directories
-build/
+build/*
 Build/
 build-*/
 
@@ -69,3 +69,5 @@ Testing/
 .cache/
 
 Input/*
+.vscode/*
+Output/*

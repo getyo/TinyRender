@@ -6,15 +6,30 @@
 #include <iostream>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include "stb_image_write.h"
 #include <math.h>
+#include <algorithm>
 
 class FileManager{
 public:
     virtual ~FileManager() = 0;
     static bool ReadMeshData(const std::string filePath,std::vector<MeshData>& meshDatas);
     static bool ReadTexture(const std::string normalPath,const std::string colorPath,const std::string ormPath,Texture& texture);
+    static void WritePNG(const std::string filePath,std::vector<Color>& color);
+    static void WritePNG(const std::string filePath,std::vector<RenderMath::Vec3D>& color);
+    static std::vector<unsigned char> CastToPNGColor(std::vector<Color>& color);
+    static std::vector<unsigned char> CastToPNGColor(std::vector<RenderMath::Vec3D>& color);
+    static void WritePNGLinear(const std::string& filePath, std::vector<RenderMath::Vec3D>& data) {
+        int width = ScreenWidth, height = ScreenHeight;
+        std::vector<unsigned char> pixels(width * height * 3);
+        for (int i = 0; i < width * height; ++i) {
+            pixels[i*3+0] = (unsigned char)std::clamp(data[i].x * 255.f, 0.f, 255.f);
+            pixels[i*3+1] = (unsigned char)std::clamp(data[i].y * 255.f, 0.f, 255.f);
+            pixels[i*3+2] = (unsigned char)std::clamp(data[i].z * 255.f, 0.f, 255.f);
+        }
+        stbi_write_png(filePath.c_str(), width, height, 3, pixels.data(), width * 3);
+    }
 };
-
 
 bool FileManager::ReadMeshData(const std::string filePath, std::vector<MeshData>& meshDatas) {
     tinyobj::ObjReaderConfig reader_config;
@@ -39,11 +54,11 @@ bool FileManager::ReadMeshData(const std::string filePath, std::vector<MeshData>
         int totalIndices = indices.size();
         
         meshDatas[i].vertices.resize(totalIndices);
-        meshDatas[i].trangles.resize(totalIndices / 3);
+        meshDatas[i].triangles.resize(totalIndices / 3);
         
         // 对每个三角形进行组装
         for (int j = 0; j < totalIndices; j += 3) {
-            auto& curTriangle = meshDatas[i].trangles[j / 3];
+            auto& curTriangle = meshDatas[i].triangles[j / 3];
             
             // 防御未指定材质的 -1 边界情况
             int matId = shapes[i].mesh.material_ids[j / 3];
@@ -56,11 +71,11 @@ bool FileManager::ReadMeshData(const std::string filePath, std::vector<MeshData>
                 auto& curVertex = meshDatas[i].vertices[globalIdx];
                 auto& idxData = indices[globalIdx];
                 
-                // 获取空间几何位置
+                // 获取空间几何位置 (UE 左手系 -> 右手系)
                 long long posIndex = idxData.vertex_index * 3;
-                curVertex.pos3D.x = attrib.vertices[posIndex];
-                curVertex.pos3D.y = attrib.vertices[posIndex + 1];
-                curVertex.pos3D.z = attrib.vertices[posIndex + 2];
+                curVertex.pos3D.x = attrib.vertices[posIndex]; 
+                curVertex.pos3D.y = attrib.vertices[posIndex + 1]; 
+                curVertex.pos3D.z = attrib.vertices[posIndex +2 ];     
                 
                 // 获取纹理 UV 坐标
                 if (idxData.texcoord_index >= 0) {
@@ -88,6 +103,8 @@ bool FileManager::ReadTexture(const std::string normalPath,const std::string col
 
     auto &colorCache = texture.rgb;
     colorCache.resize(height * width);
+    texture.rgbH = height;
+    texture.rgbW = width;
     for(int i = 0;i < height; ++i){
         for(int j = 0;j < width;++j){
             int itPos = i*width + j ;
@@ -110,6 +127,8 @@ bool FileManager::ReadTexture(const std::string normalPath,const std::string col
 
     auto &normalCache = texture.normal;
     normalCache.resize(height * width);
+    texture.normalH = height;
+    texture.normalW = width;
     for(int i = 0;i < height; ++i){
         for(int j = 0;j < width;++j){
             int itPos = i*width + j ;
@@ -132,6 +151,8 @@ bool FileManager::ReadTexture(const std::string normalPath,const std::string col
 
     auto &ormCache = texture.orm;
     ormCache.resize(height * width);
+    texture.ormH = height;
+    texture.ormW = width;
     for(int i = 0;i < height; ++i){
         for(int j = 0;j < width;++j){
             int itPos = i*width + j ;
@@ -143,4 +164,52 @@ bool FileManager::ReadTexture(const std::string normalPath,const std::string col
     stbi_image_free(imageData);
 
     return true;
+}
+
+std::vector<unsigned char> FileManager::CastToPNGColor(std::vector<Color>& color){
+    int width = ScreenWidth;
+    int height = ScreenHeight;
+    for(auto &c:color){
+        c.red = pow(c.red,1/2.2f) * 255.f;
+        c.green = pow(c.green,1/2.2f) * 255.f;
+        c.blue = pow(c.blue,1/2.2f) * 255.f;
+    }
+    // 准备一个 buffer 来存储 byte 数据
+    std::vector<unsigned char> pixels(width * height * 3);
+
+    for (int i = 0; i < width * height; ++i) {
+        pixels[i * 3 + 0] = static_cast<unsigned char>(std::clamp(color[i].red, 0.0f, 255.0f));
+        pixels[i * 3 + 1] = static_cast<unsigned char>(std::clamp(color[i].green, 0.0f, 255.0f));
+        pixels[i * 3 + 2] = static_cast<unsigned char>(std::clamp(color[i].blue, 0.0f, 255.0f));
+    }
+    return pixels;
+}
+
+std::vector<unsigned char> FileManager::CastToPNGColor(std::vector<RenderMath::Vec3D>& color){
+    int width = ScreenWidth;
+    int height = ScreenHeight;
+    for(auto &c:color){
+        c.x = pow(c.x,1/2.2f) * 255.f;
+        c.y = pow(c.y,1/2.2f) * 255.f;
+        c.z = pow(c.z,1/2.2f) * 255.f;
+    }
+    // 准备一个 buffer 来存储 byte 数据
+    std::vector<unsigned char> pixels(width * height * 3);
+
+    for (int i = 0; i < width * height; ++i) {
+        pixels[i * 3 + 0] = static_cast<unsigned char>(std::clamp(color[i].x, 0.0f, 255.0f));
+        pixels[i * 3 + 1] = static_cast<unsigned char>(std::clamp(color[i].y, 0.0f, 255.0f));
+        pixels[i * 3 + 2] = static_cast<unsigned char>(std::clamp(color[i].z, 0.0f, 255.0f));
+    }
+    return pixels;
+}
+
+void FileManager::WritePNG(const std::string filePath,std::vector<Color>& color){
+    auto pixels = FileManager::CastToPNGColor(color);
+    stbi_write_png(filePath.c_str(), ScreenWidth, ScreenHeight, 3, pixels.data(), ScreenWidth * 3);
+}
+
+void FileManager::WritePNG(const std::string filePath,std::vector<RenderMath::Vec3D>& color){
+    auto pixels = FileManager::CastToPNGColor(color);
+    stbi_write_png(filePath.c_str(), ScreenWidth, ScreenHeight, 3, pixels.data(), ScreenWidth * 3);
 }

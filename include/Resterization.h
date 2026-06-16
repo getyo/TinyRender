@@ -2,24 +2,37 @@
 #include "Vertex.h"
 #include "RenderMath.h"
 #include <memory>
+#include "Global.h"
 
 struct BarycentricCoord
 {
     float a,b,c;
     static BarycentricCoord GetBarycentricOfP(const RenderMath::Vec2D &p,const RenderMath::Vec2D &triangleV0,\
     const RenderMath::Vec2D &triangleV1,const RenderMath::Vec2D &triangleV2){
-        BarycentricCoord bcCoor;
-        float triangleArea = abs(RenderMath::CrossProduct(triangleV2 - triangleV0,triangleV1 - triangleV0));
-        triangleArea = triangleArea < 1e-6 ? 1:triangleArea;
-        bcCoor.a = RenderMath::CrossProduct(p-triangleV0 , p-triangleV2) /triangleArea; 
-        bcCoor.b = RenderMath::CrossProduct(p-triangleV0 , p-triangleV2) /triangleArea; 
-        bcCoor.c = 1 - bcCoor.a - bcCoor.b;
-        return bcCoor;
+        // 1. 计算总面积 (有向面积)
+        // 叉积公式: (v1-v0) x (v2-v0)
+        float areaABC = RenderMath::CrossProduct(triangleV1 - triangleV0, triangleV2 - triangleV0);
+        
+        // 2. 为了防止除以 0，这里给一个极小值作为 epsilon
+        if (std::abs(areaABC) < 1e-6f) return {0, 0, 0}; 
+
+        // 3. 计算子三角形的叉积 (有向面积)
+        // alpha = Area(PBC) / Area(ABC)
+        float areaPBC = RenderMath::CrossProduct(triangleV1 - p, triangleV2 - p);
+        // beta = Area(PCA) / Area(ABC)
+        float areaPCA = RenderMath::CrossProduct(triangleV2 - p, triangleV0 - p);
+        
+        BarycentricCoord bc;
+        bc.a = areaPBC / areaABC;
+        bc.b = areaPCA / areaABC;
+        bc.c = 1.0f - bc.a - bc.b;
+        return bc;
     }
 };
 struct Fragment{
     RenderMath::Vec2D standardUV;
     RenderMath::Vec3D normal;
+    RenderMath::Vec3D worldPos;
     Color color;
     ORM orm;
     int trianglePtr;
@@ -33,12 +46,15 @@ struct BoundingBox{
     int right;
     int top;
     int bottom;
-    static BoundingBox GetBoundingBox(const Vertex& v0,const Vertex& v1,const Vertex& v2){
+    static BoundingBox GetBoundingBox(const RenderMath::Vec2D& v0Pos,\
+        const RenderMath::Vec2D& v1Pos,const RenderMath::Vec2D& v2Pos){
         BoundingBox box;
-        box.left = std::min({v0.posProj.x/v0.posProj.w,v1.posProj.x/v0.posProj.w,v2.posProj.x/v0.posProj.w});
-        box.right = std::max({v0.posProj.x/v0.posProj.w,v1.posProj.x/v0.posProj.w,v2.posProj.x/v0.posProj.w});
-        box.top = std::min({v0.posProj.y/v0.posProj.w,v1.posProj.y/v0.posProj.w,v2.posProj.y/v0.posProj.w});
-        box.bottom = std::max({v0.posProj.y/v0.posProj.w,v1.posProj.y/v0.posProj.w,v2.posProj.y/v0.posProj.w});
+        box.left = std::min({floor(v0Pos.x),floor(v1Pos.x),floor(v2Pos.x)});
+        box.right = std::max({ceil(v0Pos.x),ceil(v1Pos.x),ceil(v2Pos.x)});
+        box.top = std::min({floor(v0Pos.y),floor(v1Pos.y),floor(v2Pos.y)});
+        box.bottom = std::max({ceil(v0Pos.y),ceil(v1Pos.y),ceil(v2Pos.y)});
+        if(box.right >= ScreenWidth) box.right = ScreenWidth -1;
+        if(box.bottom >= ScreenHeight) box.bottom = ScreenHeight - 1;
         return box;
     }
 };
@@ -56,7 +72,11 @@ public:
         isInit = true;
         return std::shared_ptr<Resterization>(new Resterization());
     }
-    void Rasterize(const std::vector<Vertex> &vertice,const std::vector<Triangle>& triangles,
+    void Rasterize(std::vector<Fragment>&, std::vector<Vertex> &vertice,const std::vector<Triangle>& triangles,
         const Texture& texture);
-
+#ifdef __DEBUG__
+    std::vector<RenderMath::Vec3D> normalFin;
+    std::vector<RenderMath::Vec3D> baseColorFin;
+    std::vector<RenderMath::Vec3D> ormFin;
+#endif
 };

@@ -36,9 +36,22 @@ struct Color{
     float green;
     float blue;
     Color(){}
-    Color(float r,float g,float b):red(r),green(g),blue(b){}
+    Color(float _r, float _g, float _b) : red(_r), green(_g), blue(_b) {}
     Color(const RenderMath::Vec3D& v):red(v.x),green(v.y),blue(v.z){}
+    RenderMath::Vec3D ToVec3D(){
+        return RenderMath::Vec3D(red,green,blue);
+    }
 };
+namespace Colors{
+    static const Color Black = {0.0f, 0.0f, 0.0f};
+    static const Color White = {1.0f, 1.0f, 1.0f};
+    static const Color Red   = {1.0f, 0.0f, 0.0f};
+    static const Color Green = {0.0f, 1.0f, 0.0f};
+    static const Color Blue  = {0.0f, 0.0f, 1.0f};
+    static const Color Gold  = {1.0f, 0.71f, 0.29f};
+    static const Color Grey = {0.1f, 0.1f, 0.1f};
+}
+
 struct ORM{
     float occlusion;
     float roughness;
@@ -46,6 +59,9 @@ struct ORM{
     ORM(){}
     ORM(float occlusion,float roughness,float meterillic):occlusion(occlusion),roughness(roughness),meterillic(meterillic){}
     ORM(const RenderMath::Vec3D& v):occlusion(v.x),roughness(v.y),meterillic(v.z){}
+    RenderMath::Vec3D ToVec3D(){
+        return RenderMath::Vec3D(occlusion,roughness,meterillic);
+    }
 };
 
 struct Texture

@@ -23,6 +23,9 @@ namespace RenderMath {
         friend float CrossProduct(const Vec2D& a, const Vec2D& b);
         friend Vec2D operator+(const Vec2D& a, const Vec2D& b);
         friend Vec2D operator-(const Vec2D& a, const Vec2D& b);
+        float Length() const {
+            return std::sqrt(x * x + y * y);
+        }
     };
     
     struct Vec3D  {
@@ -39,6 +42,31 @@ namespace RenderMath {
         friend Vec3D CrossProduct(const Vec3D& a, const Vec3D& b); 
         friend Vec3D operator+(const Vec3D& a, const Vec3D& b);
         friend Vec3D operator-(const Vec3D& a, const Vec3D& b);
+        float Length() const {
+            return std::sqrt(x * x + y * y + z * z);
+        }
+        // --- 向量与向量运算 (Component-wise) ---
+        friend Vec3D operator*(const Vec3D& a, const Vec3D& b) {
+            return Vec3D(a.x * b.x, a.y * b.y, a.z * b.z);
+        }
+        friend Vec3D operator/(const Vec3D& a, const Vec3D& b) {
+            // 注意：实际开发中建议在此加入除零检查
+            return Vec3D(a.x / b.x, a.y / b.y, a.z / b.z);
+        }
+
+        // --- 向量与常数运算 ---
+        // 向量 * 常数
+        friend Vec3D operator*(const Vec3D& a, float s) {
+            return Vec3D(a.x * s, a.y * s, a.z * s);
+        }
+        // 常数 * 向量 (支持乘法交换律)
+        friend Vec3D operator*(float s, const Vec3D& a) {
+            return a * s;
+        }
+        // 向量 / 常数
+        friend Vec3D operator/(const Vec3D& a, float s) {
+            return Vec3D(a.x / s, a.y / s, a.z / s);
+        }
     };
 
     struct Vec4D 
@@ -52,6 +80,23 @@ namespace RenderMath {
         friend float DotProduct(const Vec4D& a, const Vec4D& b);
         friend Vec4D operator+(const Vec4D& a, const Vec4D& b);
         friend Vec4D operator-(const Vec4D& a, const Vec4D& b);
+        float Length() const {
+            return std::sqrt(x * x + y * y + z * z + w * w);
+        }
+        Vec4D operator*(float s) const {
+            return Vec4D(x * s, y * s, z * s, w * s);
+        }
+        Vec4D operator/(float s) const {
+            // 注意：实际项目中建议添加对 s == 0 的检查
+            return Vec4D(x / s, y / s, z / s, w / s);
+        }
+
+        friend Vec4D operator*(float s, const Vec4D& v) {
+            return v * s;
+        }
+        friend Vec4D operator/(float s, const Vec4D& v) {
+            return Vec4D(s / v.x, s / v.y, s / v.z, s / v.w);
+        }
     };
 struct Mat2D {
         float data[2][2];
@@ -70,7 +115,7 @@ struct Mat2D {
             return data[col]; 
         }
     };
-
+    struct Mat4D;
     struct Mat3D {
         float data[3][3];
         Mat3D() { // 默认构造为单位矩阵
@@ -88,6 +133,7 @@ struct Mat2D {
         inline float* operator[](int col) {
             return data[col]; 
         }
+        Mat4D ToMat4D();
     };
 
     struct Mat4D {
@@ -115,6 +161,11 @@ struct Mat2D {
         friend Mat4D Transpose(const Mat4D &a);
         inline float* operator[](int col) {
             return data[col]; 
+        }
+        Mat3D ToMat3D(){
+            return Mat3D(Vec3D{data[0][0],data[1][0],data[2][0]},\
+                        Vec3D{data[0][1],data[1][1],data[2][1]},\
+                        Vec3D{data[0][2],data[1][2],data[2][2]});
         }
     };
 
@@ -400,6 +451,7 @@ struct Mat2D {
     }
 
     // ==================== LookAt实现 ====================
+    //把Obj移动到以eyePos为原点，以upVec为向上y轴的右手系所指-z轴方向
     inline Mat4D LookAt(const Vec3D& eyePos,const Vec3D& targetPos,const Vec3D& upVec){
         Vec3D gz = Normalize(eyePos - targetPos);
         Vec3D gx = Normalize(CrossProduct(upVec,gz));
@@ -486,27 +538,6 @@ struct Mat2D {
     inline Vec2D operator*(float scalar, const Vec2D& v) {
         return Vec2D(v.x * scalar, v.y * scalar);
     }
-
-    // ==================== 3D 向量与标量乘法重载 ====================
-
-    inline Vec3D operator*(const Vec3D& v, float scalar) {
-        return Vec3D(v.x * scalar, v.y * scalar, v.z * scalar);
-    }
-
-    inline Vec3D operator*(float scalar, const Vec3D& v) {
-        return Vec3D(v.x * scalar, v.y * scalar, v.z * scalar);
-    }
-
-    // ==================== 4D 向量与标量乘法重载 ====================
-
-    inline Vec4D operator*(const Vec4D& v, float scalar) {
-        return Vec4D(v.x * scalar, v.y * scalar, v.z * scalar, v.w * scalar);
-    }
-
-    inline Vec4D operator*(float scalar, const Vec4D& v) {
-        return Vec4D(v.x * scalar, v.y * scalar, v.z * scalar, v.w * scalar);
-    }
-
     // ==================== 双线性插值 ====================
     inline float BlinearInterploation(const Vec2D point,float leftTop,float rightTop,float leftButtom,float rightButtom)
     {

@@ -15,16 +15,18 @@ private:
     // 世界坐标资产位置
     RenderMath::Vec3D cameraPos;
     RenderMath::Vec3D objPos;
+    RenderMath::Vec3D objOffset;
     RenderMath::Vec3D lightPos;
 
     //变化矩阵，其中ViewTransform需要随摄像机以及跟随对象跟新
     //其他两者在屏幕不变的情况下不变
     RenderMath::Mat4D ViewTransform;
     RenderMath::Mat4D PerspectiveProjection;
-    RenderMath::Mat4D ViewportTransform;
+    
 
     Projection(const RenderMath::Vec3D& cameraPos,const RenderMath::Vec3D& lightPos,\
-    const RenderMath::Vec3D& objPos):cameraPos(cameraPos), objPos(objPos), lightPos(lightPos)
+    const RenderMath::Vec3D& objPos,const RenderMath::Vec3D& objOffset):cameraPos(cameraPos), objPos(objPos), lightPos(lightPos),\
+    objOffset(objOffset)
     {
         float tanHalfFov = tanf(SightConeRad / 2.0f);
         PerspectiveProjection = RenderMath::Mat4D(
@@ -35,20 +37,15 @@ private:
             RenderMath::Vec4D(0.0f, 0.0f, -(2.0f * FarClip * NearClip) / (FarClip - NearClip), 0.0f)
         );
 
-        ViewportTransform = RenderMath::Mat4D (
-            RenderMath::Vec4D(ScreenWidth / 2.0f, 0.0f, 0.0f, 0.0f),
-            RenderMath::Vec4D(0.0f, ScreenHeight / 2.0f, 0.0f, 0.0f), // 若屏幕反转，这里改为负
-            RenderMath::Vec4D(0.0f, 0.0f, 1.0f, 0.0f),
-            RenderMath::Vec4D((ScreenWidth - 1.0f) / 2.0f, (ScreenHeight - 1.0f) / 2.0f, 0.0f, 1.0f)
-        );
+      
     }
 
 public:
     static std::shared_ptr<Projection> ProjectionFactory(const RenderMath::Vec3D &cameraPos,
-    const RenderMath::Vec3D &lightPos,const RenderMath::Vec3D &objPos){
+    const RenderMath::Vec3D &lightPos,const RenderMath::Vec3D &objPos,const RenderMath::Vec3D& objOffset){
         if(isInit) return nullptr;
         isInit = true;
-        return std::shared_ptr<Projection>(new Projection(cameraPos,lightPos,objPos));
+        return std::shared_ptr<Projection>(new Projection(cameraPos,lightPos,objPos,objOffset));
     }
 
     void SetCameraPos(const RenderMath::Vec3D &newPos){

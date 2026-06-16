@@ -1,24 +1,20 @@
 #include "Projection.h"
+#include <cassert>
 
 void Projection::Project(std::vector<Vertex> &vertice,const std::vector<Triangle>& triangles){
     //求解摄像机视角变化
-    //把相机平移到原点
-    RenderMath::Mat4D T(
-        RenderMath::Vec4D(1,0,0,0),
-        RenderMath::Vec4D(0,1,0,0),
-        RenderMath::Vec4D(0,0,1,0),
-        RenderMath::Vec4D(-cameraPos.x,-cameraPos.y,-cameraPos.z,1)
-    );
-    ViewTransform = RenderMath::LookAt(cameraPos,{0,0,-1},{0,1,0}) * T;
+    ViewTransform = RenderMath::LookAt(cameraPos,objPos,{0,1,0});
     //变化到标准空间的矩阵
     RenderMath::Mat4D M = PerspectiveProjection * ViewTransform;
     for(auto &v:vertice){
         
         //投影位置计算
-        RenderMath::Vec4D worldPos(v.pos3D.x + objPos.x, v.pos3D.y + objPos.y, v.pos3D.z + objPos.z, 1.0f);
+        auto m = ModelTransform; 
+        v.pos3D = m.ToMat3D()* v.pos3D;
+        v.pos3D = v.pos3D + objPos + objOffset;
+        RenderMath::Vec4D worldPos(v.pos3D, 1.0f);
         v.posProj = M * worldPos;
         if (v.posProj.w <= 0.0f) continue; 
-        v.posProj = ViewportTransform * v.posProj; // 变换到屏幕空间
 
         //为下一步累加做准备
         v.normal = RenderMath::Vec3D(0,0,0);

@@ -63,6 +63,8 @@ void Projection::Project(std::vector<Vertex> &vertice,const std::vector<Triangle
     for(auto &v : vertice){
         // 1. 法线单位化 
         v.normal = RenderMath::Normalize(v.normal);
+        //Model矩阵镜像后需要反转
+        v.normal = v.normal *-1;
 
         // 2. Tangent 施密特正交化
         v.tangent = RenderMath::Normalize(v.tangent - v.normal * RenderMath::DotProduct(v.normal, v.tangent));

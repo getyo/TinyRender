@@ -43,12 +43,12 @@ std::vector<Color> Shader::Shading(std::vector<Fragment> &fragments){
         //2. 直射光：漫反射部分
         auto diffuseLight = diffK * (frag.color.ToVec3D()/RenderMath::PI);
         //3. 直射光：高光部分
-        float NdotH = std::max(-RenderMath::DotProduct(frag.normal, halfAngle), 0.f);
+        float NdotH = std::max(RenderMath::DotProduct(frag.normal, halfAngle), 0.f);
         //float NdotH = std::max(RenderMath::DotProduct(frag.normal, halfAngle), 0.f);
         auto specularLight = spK * spFactor * pow( NdotH, shininess);
 
         //4. 直射光就是两部分在光照能量和角度下的总和
-        auto directLight = lightSource.intensity * std::max(-RenderMath::DotProduct(frag.normal,lightD),0.f) * \
+        auto directLight = lightSource.intensity * std::max(RenderMath::DotProduct(frag.normal,lightD),0.f) * \
                             lightSource.color.ToVec3D() *(diffuseLight + specularLight);
         //5. 环境光
         float safeAO = frag.orm.occlusion <= 0 ? 0.1:frag.orm.occlusion;

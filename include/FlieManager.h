@@ -23,9 +23,9 @@ public:
         int width = ScreenWidth, height = ScreenHeight;
         std::vector<unsigned char> pixels(width * height * 3);
         for (int i = 0; i < width * height; ++i) {
-            pixels[i*3+0] = (unsigned char)std::clamp(data[i].x * 255.f, 0.f, 255.f);
-            pixels[i*3+1] = (unsigned char)std::clamp(data[i].y * 255.f, 0.f, 255.f);
-            pixels[i*3+2] = (unsigned char)std::clamp(data[i].z * 255.f, 0.f, 255.f);
+            pixels[i*3+0] = (unsigned char)std::clamp((data[i].x +1.f) / 2* 255.f, 0.f, 255.f);
+            pixels[i*3+1] = (unsigned char)std::clamp((data[i].y +1.f) / 2 * 255.f, 0.f, 255.f);
+            pixels[i*3+2] = (unsigned char)std::clamp((data[i].z +1.f) / 2 * 255.f, 0.f, 255.f);
         }
         stbi_write_png(filePath.c_str(), width, height, 3, pixels.data(), width * 3);
     }

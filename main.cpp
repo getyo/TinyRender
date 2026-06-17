@@ -8,23 +8,30 @@
 
 int main(){
     //设置相机，点光源，物体位置
-    Camera camera({100,100,100},{0,0,1});
-    PointLight light({0,100,50},{Colors::White},20.f);
-    AmbientLight ambLight(Colors::White,0.1f);
+    Camera camera({0,100,100},{0,0,1});
+    PointLight light({150,150,150},{Colors::White},8.f);
+    AmbientLight ambLight(Colors::White,0.15f);
     std::vector<WorldObject> objs;
     objs.push_back(WorldObject::MakeGround());
+    
     //读取模型和贴图
-    
+    std::string swordObjFile = "input/SM_Weapon.OBJ";
+    std::string swordNormal = "Input\\T_IronWeapon_2_Normal.PNG";
+    std::string swordBaseColor = "Input\\T_IronWeapon_2_BaseColor.PNG";
+    std::string swordORM = "Input\\T_IronWeapon_2_OcclusionRoughnessMetallic.PNG";
     objs.push_back(WorldObject("Sword",{0,0,0},{0,20,0}));
-    FileManager::ReadMeshData("input/SM_Weapon.OBJ",objs[1].meshData);
-    FileManager::ReadTexture("Input\\T_IronWeapon_2_Normal.PNG",\
-        "Input\\T_IronWeapon_2_BaseColor.PNG",\
-        "Input\\T_IronWeapon_2_OcclusionRoughnessMetallic.PNG",
-        objs[1].texture
-    );
+    FileManager::LoadObject(objs[objs.size()-1],swordObjFile,swordNormal,swordBaseColor,swordORM);
     
-    
-    RenderMath::Vec3D cameraLookAt(0,60,0);
+    std::string shieldObjFile = "Input\\SM_Medieval_Shield.OBJ";
+    std::string shieldNormal = "Input\\Medieval_Shield_low_M_Medieval_Shield_Norm.PNG";
+    std::string shieldBaseColor = "Input\\Medieval_Shield_low_M_Medieval_Shield_Base.PNG";
+    std::string shieldAO = "Input\\M_Medieval_Shield_ambient_occlusion_mix_tg.PNG";
+    std::string shieldRough = "Input\\Medieval_Shield_low_M_Medieval_Shield_Roug.PNG";
+    std::string shieldMeta = "Input\\Medieval_Shield_low_M_Medieval_Shield_Meta.PNG";
+    objs.push_back(WorldObject("Shield",{0,0,0},{0,20,-100}));
+    FileManager::LoadObject(objs[objs.size()-1],shieldObjFile,shieldNormal,shieldBaseColor,shieldMeta);
+   
+    RenderMath::Vec3D cameraLookAt(0,70,0);
 
     //渲染管线开启
     //1. 投影 
@@ -34,8 +41,8 @@ int main(){
     int objCnt = objs.size();
     for(int i = 0;i < objCnt;++i)
     {
-        if(!i) proj->Project(objs[i],false);
-        else proj->Project(objs[i]);
+        if(objs[i].isDrawn) proj->Project(objs[i],false);
+        else proj->Project(objs[i],true);
     }
     //2. 光栅化插值
     //输入：上一步输出的顶点，三角形，basecolor，orm，normal三张贴图组成的纹理

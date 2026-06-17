@@ -15,6 +15,8 @@ public:
     virtual ~FileManager() = 0;
     static bool ReadMeshData(const std::string filePath,MeshData& meshData);
     static bool ReadTexture(const std::string normalPath,const std::string colorPath,const std::string ormPath,Texture& texture);
+    static bool ReadTexture(const std::string normalPath,const std::string colorPath,\
+        const std::string aoPath,const std::string roughPath,const std::string metaPath,Texture& texture);
     static void WritePNG(const std::string filePath,std::vector<Color>& color);
     static void WritePNG(const std::string filePath,std::vector<RenderMath::Vec3D>& color);
     static std::vector<unsigned char> CastToPNGColor(std::vector<Color>& color);
@@ -28,6 +30,19 @@ public:
             pixels[i*3+2] = (unsigned char)std::clamp((data[i].z +1.f) / 2 * 255.f, 0.f, 255.f);
         }
         stbi_write_png(filePath.c_str(), width, height, 3, pixels.data(), width * 3);
+    }
+    static void LoadObject(WorldObject &object,const std::string &objFile,const std::string &textureNormal,\
+        const std::string &BaseColor,const std::string &ORM)
+    {
+        FileManager::ReadMeshData(objFile,object.meshData);
+        FileManager::ReadTexture(textureNormal,BaseColor,ORM,object.texture);
+    }
+    static void LoadObject(WorldObject &object,const std::string &objFile,const std::string &textureNormal,\
+        const std::string &BaseColor,const std::string &AO,const std::string &Rough,\
+        const std::string &Meta)
+    {
+        FileManager::ReadMeshData(objFile,object.meshData);
+        FileManager::ReadTexture(textureNormal,BaseColor,AO,Rough,Meta,object.texture);
     }
 };
 
@@ -88,7 +103,102 @@ bool FileManager::ReadMeshData(const std::string filePath, MeshData& meshData) {
     }
     return true;
 }
+bool FileManager::ReadTexture(const std::string normalPath,const std::string colorPath,\
+        const std::string aoPath,const std::string roughPath,const std::string metaPath,Texture& texture){
+            //加载颜色
+    int width, height, original_channels;
+    unsigned char* imageData = stbi_load(colorPath.c_str(), &width, &height, &original_channels, 3);
+    if (imageData == nullptr) {
+        printf("BaseColor load failed: %s\n", stbi_failure_reason());
+        return false;
+    }
 
+    auto &colorCache = texture.rgb;
+    colorCache.resize(height * width);
+    texture.rgbH = height;
+    texture.rgbW = width;
+    for(int i = 0;i < height; ++i){
+        for(int j = 0;j < width;++j){
+            int itPos = i*width + j ;
+            colorCache[itPos].red = static_cast<float>(imageData[itPos * 3]) / 255.f;
+            colorCache[itPos].green = static_cast<float>(imageData[itPos * 3 + 1]) / 255.f;
+            colorCache[itPos].blue = static_cast<float>(imageData[itPos * 3 + 2]) / 255.f;
+            colorCache[itPos].red = pow(colorCache[itPos].red,2.2f);
+            colorCache[itPos].green = pow(colorCache[itPos].green,2.2f);
+            colorCache[itPos].blue = pow(colorCache[itPos].blue,2.2f);
+        }
+    }
+    stbi_image_free(imageData);
+
+    //加载法线
+    imageData = stbi_load(normalPath.c_str(), &width, &height, &original_channels, 3);
+    if (imageData == nullptr) {
+        printf("Normal load failed: %s\n", stbi_failure_reason());
+        return false;
+    }
+
+    auto &normalCache = texture.normal;
+    normalCache.resize(height * width);
+    texture.normalH = height;
+    texture.normalW = width;
+    for(int i = 0;i < height; ++i){
+        for(int j = 0;j < width;++j){
+            int itPos = i*width + j ;
+            normalCache[itPos].x = (static_cast<float>(imageData[itPos * 3]) / 255.f) * 2.f -1.f;
+            normalCache[itPos].y = (static_cast<float>(imageData[itPos * 3 + 1]) / 255.f) * 2.f -1.f;
+            normalCache[itPos].z = (static_cast<float>(imageData[itPos * 3 + 2]) / 255.f) * 2.f -1.f;
+
+            normalCache[itPos].y = -normalCache[itPos].y;
+            normalCache[itPos] = RenderMath::Normalize(normalCache[itPos]);
+        }
+    }
+    stbi_image_free(imageData);
+
+    //记载环境光遮盖，粗糙度，金属度
+    imageData = stbi_load(aoPath.c_str(), &width, &height, &original_channels, 3);
+    if (imageData == nullptr) {
+        printf("AO load failed: %s\n", stbi_failure_reason());
+        return false;
+    }
+
+    auto &ormCache = texture.orm;
+    ormCache.resize(height * width);
+    texture.ormH = height;
+    texture.ormW = width;
+    for(int i = 0;i < height; ++i){
+        for(int j = 0;j < width;++j){
+            int itPos = i*width + j ;
+            ormCache[itPos].occlusion = static_cast<float>(imageData[itPos * 3]) / 255.f;
+        }
+    }
+
+    imageData = stbi_load(roughPath.c_str(), &width, &height, &original_channels, 3);
+    if (imageData == nullptr) {
+        printf("Roughness load failed: %s\n", stbi_failure_reason());
+        return false;
+    }
+    for(int i = 0;i < height; ++i){
+        for(int j = 0;j < width;++j){
+            int itPos = i*width + j ;
+            ormCache[itPos].roughness = static_cast<float>(imageData[itPos * 3]) / 255.f;
+        }
+    }
+
+    imageData = stbi_load(metaPath.c_str(), &width, &height, &original_channels, 3);
+    if (imageData == nullptr) {
+        printf("Metallic load failed: %s\n", stbi_failure_reason());
+        return false;
+    }
+    for(int i = 0;i < height; ++i){
+        for(int j = 0;j < width;++j){
+            int itPos = i*width + j ;
+            ormCache[itPos].meterillic = static_cast<float>(imageData[itPos * 3]) / 255.f;
+        }
+    }
+    stbi_image_free(imageData);
+
+    return true;
+}
 bool FileManager::ReadTexture(const std::string normalPath,const std::string colorPath,const std::string ormPath,Texture& texture){
     //加载颜色
     int width, height, original_channels;

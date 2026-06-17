@@ -131,9 +131,9 @@ void Rasterization::Rasterize(std::vector<Fragment> &fragments, std::vector<Worl
                 int newIt = curFragment.trianglePtr - originSize;
                 auto &addedTri = cutTriStore[curFragment.objId].triangles;
                 auto &addedVtx = cutTriStore[curFragment.objId].vertices;
-                v0 = &addedVtx[addedTri[it - originSize].vertexIndex[0]];
-                v1 = &addedVtx[addedTri[it - originSize].vertexIndex[1]];
-                v2 = &addedVtx[addedTri[it - originSize].vertexIndex[2]];
+                v0 = &addedVtx[addedTri[newIt].vertexIndex[0]];
+                v1 = &addedVtx[addedTri[newIt].vertexIndex[1]];
+                v2 = &addedVtx[addedTri[newIt].vertexIndex[2]];
             }
 
             // 世界位置坐标插值

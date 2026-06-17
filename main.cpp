@@ -6,9 +6,19 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+void FocusOnShield(Camera& camera,RenderMath::Vec3D& cameraLookAt){
+    camera.worldPos = RenderMath::Vec3D(-20,80,-20);
+    cameraLookAt = RenderMath::Vec3D(-100,0,-100);
+}
+
+void FocusOnSword(Camera& camera,RenderMath::Vec3D& cameraLookAt){
+    camera.worldPos = RenderMath::Vec3D(0,50,100);
+    cameraLookAt = RenderMath::Vec3D(0,70,0);
+}
+
 int main(){
     //设置相机，点光源，物体位置
-    Camera camera({0,100,100},{0,0,1});
+    Camera camera({-20,80,-20},{0,0,1});
     PointLight light({150,150,150},{Colors::White},8.f);
     AmbientLight ambLight(Colors::White,0.15f);
     std::vector<WorldObject> objs;
@@ -28,10 +38,12 @@ int main(){
     std::string shieldAO = "Input\\M_Medieval_Shield_ambient_occlusion_mix_tg.PNG";
     std::string shieldRough = "Input\\Medieval_Shield_low_M_Medieval_Shield_Roug.PNG";
     std::string shieldMeta = "Input\\Medieval_Shield_low_M_Medieval_Shield_Meta.PNG";
-    objs.push_back(WorldObject("Shield",{0,0,0},{0,20,-100}));
+    objs.push_back(WorldObject("Shield",{0,0,0},{-100,20,-100}));
     FileManager::LoadObject(objs[objs.size()-1],shieldObjFile,shieldNormal,shieldBaseColor,shieldMeta);
    
-    RenderMath::Vec3D cameraLookAt(0,70,0);
+    RenderMath::Vec3D cameraLookAt;
+    FocusOnSword(camera,cameraLookAt);
+    //FocusOnShield(camera,cameraLookAt);
 
     //渲染管线开启
     //1. 投影 

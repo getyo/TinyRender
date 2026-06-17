@@ -8,29 +8,35 @@
 
 int main(){
     //设置相机，点光源，物体位置
-    Camera camera({100,30.f,0},{0,0,1});
+    Camera camera({100,100,100},{0,0,1});
     PointLight light({0,100,50},{Colors::White},20.f);
     AmbientLight ambLight(Colors::White,0.1f);
     std::vector<WorldObject> objs;
+    objs.push_back(WorldObject::MakeGround());
     //读取模型和贴图
-    /*
-    objs.push_back(WorldObject("Sword",{0,50,100},{0,-30,0}));
-    FileManager::ReadMeshData("input/SM_Weapon.OBJ",objs[0].meshData);
+    
+    objs.push_back(WorldObject("Sword",{0,0,0},{0,20,0}));
+    FileManager::ReadMeshData("input/SM_Weapon.OBJ",objs[1].meshData);
     FileManager::ReadTexture("Input\\T_IronWeapon_2_Normal.PNG",\
         "Input\\T_IronWeapon_2_BaseColor.PNG",\
         "Input\\T_IronWeapon_2_OcclusionRoughnessMetallic.PNG",
-        objs[0].texture
+        objs[1].texture
     );
-    */
-    objs.push_back(WorldObject::MakeGround());
     
+    
+    RenderMath::Vec3D cameraLookAt(0,60,0);
+
     //渲染管线开启
     //1. 投影 
     //输入：顶点，三角形
     //输出：带有投影位置，以及tbn的顶点 
-    auto proj = Projection::ProjectionFactory(camera.worldPos,light.worldPos);
-    for(auto &obj:objs)
-        proj->Project(obj,false);
+    auto proj = Projection::ProjectionFactory(camera.worldPos,light.worldPos,cameraLookAt);
+    int objCnt = objs.size();
+    for(int i = 0;i < objCnt;++i)
+    {
+        if(!i) proj->Project(objs[i],false);
+        else proj->Project(objs[i]);
+    }
     //2. 光栅化插值
     //输入：上一步输出的顶点，三角形，basecolor，orm，normal三张贴图组成的纹理
     //输出：插值完的片元

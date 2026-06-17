@@ -39,7 +39,8 @@ struct Fragment{
     float depth;
     float w;
     BarycentricCoord bcCoor;
-    
+    int objId;
+    bool isDrawn = false; 
 };
 struct BoundingBox{
     int left;
@@ -63,8 +64,9 @@ struct BoundingBox{
 class Rasterization{
 private:
     inline static bool isInit = false;
+    std::vector<MeshData> cutTriStore;
     Rasterization() = default;
-    void CutTriangle(int triangleIt,MeshData&);
+    void CutTriangle(int triangleIt,int objId,const MeshData&);
     Vertex LerpVertex(const Vertex &curV,const Vertex&nextV);
 public:
     static std::shared_ptr<Rasterization> RasterizationFactory(){

@@ -27,10 +27,7 @@ std::vector<Color> Shader::Shading(std::vector<Fragment> &fragments){
            continue;
         }
         //如果是画出来的线，不计算光照
-        if(!frag.standardUV.Length()){
-            finalColor[i] = frag.color;        
-            continue;
-        }
+        
         //finalColor[i] = frag.color;
         ++totalFrag;
         //1. 前置的常数变量计算

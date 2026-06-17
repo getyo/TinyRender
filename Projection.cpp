@@ -3,7 +3,7 @@
 
 void Projection::Project(WorldObject &worldObj,bool doModelTran){
     //求解摄像机视角变化
-    ViewTransform = RenderMath::LookAt(cameraPos,worldObj.worldPos,{0,1,0});
+    ViewTransform = RenderMath::LookAt(cameraPos,targetPos,{0,1,0});
     //变化到标准空间的矩阵
     RenderMath::Mat4D M = PerspectiveProjection * ViewTransform;
     auto &vertices = worldObj.meshData.vertices;
@@ -18,7 +18,8 @@ void Projection::Project(WorldObject &worldObj,bool doModelTran){
         v.pos3D = v.pos3D + worldObj.worldPos + worldObj.RelatetiveOffset;
         RenderMath::Vec4D worldPos(v.pos3D, 1.0f);
         v.posProj = M * worldPos;
-        if (v.posProj.w <= 0.0f) continue; 
+
+        if (v.posProj.w < 0.0f) continue; 
 
         //为下一步累加做准备
         v.normal = RenderMath::Vec3D(0,0,0);

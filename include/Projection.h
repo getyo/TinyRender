@@ -15,6 +15,7 @@ private:
     // 世界坐标资产位置
     RenderMath::Vec3D cameraPos;
     RenderMath::Vec3D lightPos;
+    RenderMath::Vec3D targetPos;
 
     //变化矩阵，其中ViewTransform需要随摄像机以及跟随对象跟新
     //其他两者在屏幕不变的情况下不变
@@ -22,7 +23,8 @@ private:
     RenderMath::Mat4D PerspectiveProjection;
     
 
-    Projection(const RenderMath::Vec3D& cameraPos,const RenderMath::Vec3D& lightPost):cameraPos(cameraPos), lightPos(lightPos)
+    Projection(const RenderMath::Vec3D& cameraPos,const RenderMath::Vec3D& lightPost,const RenderMath::Vec3D targetPos):cameraPos(cameraPos), \
+    lightPos(lightPos), targetPos(targetPos)
     {
         float tanHalfFov = tanf(SightConeRad / 2.0f);
         PerspectiveProjection = RenderMath::Mat4D(
@@ -38,11 +40,11 @@ private:
 
 public:
     static std::shared_ptr<Projection> ProjectionFactory(const RenderMath::Vec3D &cameraPos,
-    const RenderMath::Vec3D &lightPos)
+    const RenderMath::Vec3D &lightPos,const RenderMath::Vec3D targetPos)
     {
         if(isInit) return nullptr;
         isInit = true;
-        return std::shared_ptr<Projection>(new Projection(cameraPos,lightPos));
+        return std::shared_ptr<Projection>(new Projection(cameraPos,lightPos,targetPos));
     }
 
     void SetCameraPos(const RenderMath::Vec3D &newPos){

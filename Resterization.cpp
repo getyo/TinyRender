@@ -4,7 +4,7 @@
 #include <iostream>
 #include <cassert>
 
-void Resterization::Rasterize(std::vector<Fragment> &fragments, std::vector<Vertex> &vertice, const std::vector<Triangle> &triangles, const Texture &texture) {
+void Rasterization::Rasterize(std::vector<Fragment> &fragments, WorldObject &worldObj) {
     //深度预处理
     int screenSize = ScreenWidth * ScreenHeight;
     fragments.resize(screenSize);
@@ -13,15 +13,17 @@ void Resterization::Rasterize(std::vector<Fragment> &fragments, std::vector<Vert
     baseColorFin.resize(screenSize);
     ormFin.resize(screenSize);    
 #endif
-    
+    auto& vertices = worldObj.meshData.vertices;
+    auto& triangles = worldObj.meshData.triangles;
+    auto& texture = worldObj.texture;
     for(int i=0; i<ScreenWidth * ScreenHeight; ++i){
         fragments[i].trianglePtr = -1;
         fragments[i].depth = std::numeric_limits<float>::max();
     }
     for(int it = 0;it < triangles.size();++it){
-        auto &v0 = vertice[triangles[it].vertexIndex[0]];
-        auto &v1 = vertice[triangles[it].vertexIndex[1]];
-        auto &v2 = vertice[triangles[it].vertexIndex[2]];
+        auto &v0 = vertices[triangles[it].vertexIndex[0]];
+        auto &v1 = vertices[triangles[it].vertexIndex[1]];
+        auto &v2 = vertices[triangles[it].vertexIndex[2]];
         //暂且这么简单处理近平面剪切
         if(v0.posProj.w <0 || v1.posProj.w < 0 || v2.posProj.w < 0)
             continue;
@@ -74,9 +76,9 @@ void Resterization::Rasterize(std::vector<Fragment> &fragments, std::vector<Vert
             if(fragments[it].trianglePtr == -1) continue;
             ++totalCnt;
             auto &curFragment = fragments[it];
-            auto &v0 = vertice[triangles[curFragment.trianglePtr].vertexIndex[0]];
-            auto &v1 = vertice[triangles[curFragment.trianglePtr].vertexIndex[1]];
-            auto &v2 = vertice[triangles[curFragment.trianglePtr].vertexIndex[2]];
+            auto &v0 = vertices[triangles[curFragment.trianglePtr].vertexIndex[0]];
+            auto &v1 = vertices[triangles[curFragment.trianglePtr].vertexIndex[1]];
+            auto &v2 = vertices[triangles[curFragment.trianglePtr].vertexIndex[2]];
             //插值纹理坐标到标准空间
             float us = curFragment.bcCoor.a * (v0.textureUV.x / v0.posProj.w) +
                        curFragment.bcCoor.b * (v1.textureUV.x / v1.posProj.w) +

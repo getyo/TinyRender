@@ -62,18 +62,17 @@ struct BoundingBox{
 
 
 
-class Resterization{
+class Rasterization{
 private:
     inline static bool isInit = false;
-    Resterization() = default;
+    Rasterization() = default;
 public:
-    static std::shared_ptr<Resterization> RasterizationFactory(){
+    static std::shared_ptr<Rasterization> RasterizationFactory(){
         if(isInit) return nullptr;
         isInit = true;
-        return std::shared_ptr<Resterization>(new Resterization());
+        return std::shared_ptr<Rasterization>(new Rasterization());
     }
-    void Rasterize(std::vector<Fragment>&, std::vector<Vertex> &vertice,const std::vector<Triangle>& triangles,
-        const Texture& texture);
+    void Rasterize(std::vector<Fragment>&, WorldObject &worldObj);
 #ifdef __DEBUG__
     std::vector<RenderMath::Vec3D> normalFin;
     std::vector<RenderMath::Vec3D> baseColorFin;

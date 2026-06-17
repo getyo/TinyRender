@@ -13,7 +13,7 @@
 class FileManager{
 public:
     virtual ~FileManager() = 0;
-    static bool ReadMeshData(const std::string filePath,std::vector<MeshData>& meshDatas);
+    static bool ReadMeshData(const std::string filePath,MeshData& meshData);
     static bool ReadTexture(const std::string normalPath,const std::string colorPath,const std::string ormPath,Texture& texture);
     static void WritePNG(const std::string filePath,std::vector<Color>& color);
     static void WritePNG(const std::string filePath,std::vector<RenderMath::Vec3D>& color);
@@ -31,7 +31,7 @@ public:
     }
 };
 
-bool FileManager::ReadMeshData(const std::string filePath, std::vector<MeshData>& meshDatas) {
+bool FileManager::ReadMeshData(const std::string filePath, MeshData& meshData) {
     tinyobj::ObjReaderConfig reader_config;
     reader_config.triangulate = true; // 确保切成三角形
 
@@ -45,47 +45,44 @@ bool FileManager::ReadMeshData(const std::string filePath, std::vector<MeshData>
     
     auto& attrib = reader.GetAttrib();
     auto& shapes = reader.GetShapes();
-    int scnt = shapes.size();
-    meshDatas.resize(scnt);
+    if(shapes.size() > 1) 
+        std::cerr << "OBJ has more than one mesh \n";
     
-    // 对每个 Shape (子网格) 进行遍历
-    for (int i = 0; i < scnt; ++i) {
-        auto& indices = shapes[i].mesh.indices;
-        int totalIndices = indices.size();
+    
+    auto& indices = shapes[0].mesh.indices;
+    int totalIndices = indices.size();    
+    meshData.vertices.resize(totalIndices);
+    meshData.triangles.resize(totalIndices / 3);
         
-        meshDatas[i].vertices.resize(totalIndices);
-        meshDatas[i].triangles.resize(totalIndices / 3);
-        
-        // 对每个三角形进行组装
-        for (int j = 0; j < totalIndices; j += 3) {
-            auto& curTriangle = meshDatas[i].triangles[j / 3];
+    // 对每个三角形进行组装
+    for (int j = 0; j < totalIndices; j += 3) {
+        auto& curTriangle = meshData.triangles[j / 3];
             
-            // 防御未指定材质的 -1 边界情况
-            int matId = shapes[i].mesh.material_ids[j / 3];
+        // 防御未指定材质的 -1 边界情况
+        int matId = shapes[0].mesh.material_ids[j / 3];
             curTriangle.textureId = (matId < 0) ? 0 : matId;
             
-            for (int k = 0; k < 3; ++k) {
-                int globalIdx = j + k;
-                curTriangle.vertexIndex[k] = globalIdx; // 映射到全新的拓扑索引
+        for (int k = 0; k < 3; ++k) {
+            int globalIdx = j + k;
+            curTriangle.vertexIndex[k] = globalIdx; // 映射到全新的拓扑索引
                 
-                auto& curVertex = meshDatas[i].vertices[globalIdx];
-                auto& idxData = indices[globalIdx];
+            auto& curVertex = meshData.vertices[globalIdx];
+            auto& idxData = indices[globalIdx];
                 
-                // 获取空间几何位置 (UE 左手系 -> 右手系)
-                long long posIndex = idxData.vertex_index * 3;
-                curVertex.pos3D.x = attrib.vertices[posIndex]; 
-                curVertex.pos3D.y = attrib.vertices[posIndex + 1]; 
-                curVertex.pos3D.z = attrib.vertices[posIndex +2 ];     
+            // 获取空间几何位置 (UE 左手系 -> 右手系)
+            long long posIndex = idxData.vertex_index * 3;
+            curVertex.pos3D.x = attrib.vertices[posIndex]; 
+            curVertex.pos3D.y = attrib.vertices[posIndex + 1]; 
+            curVertex.pos3D.z = attrib.vertices[posIndex +2 ];     
                 
-                // 获取纹理 UV 坐标
-                if (idxData.texcoord_index >= 0) {
-                    long long uvIndex = idxData.texcoord_index * 2;
-                    curVertex.textureUV.x = attrib.texcoords[uvIndex];
-                    curVertex.textureUV.y = attrib.texcoords[uvIndex + 1];
-                } else {
-                    curVertex.textureUV.x = 0.0f;
-                    curVertex.textureUV.y = 0.0f;
-                }
+            // 获取纹理 UV 坐标
+            if (idxData.texcoord_index >= 0) {
+                long long uvIndex = idxData.texcoord_index * 2;
+                curVertex.textureUV.x = attrib.texcoords[uvIndex];
+                curVertex.textureUV.y = attrib.texcoords[uvIndex + 1];
+            } else {
+                curVertex.textureUV.x = 0.0f;
+                curVertex.textureUV.y = 0.0f;
             }
         }
     }

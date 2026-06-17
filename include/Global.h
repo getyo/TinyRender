@@ -47,7 +47,7 @@ struct PointLight {
 struct AmbientLight {
     Color color;
     float intensity;
-
+    
     AmbientLight() : color(1.f, 1.f, 1.f), intensity(0.1f) {}
     AmbientLight(Color col, float inte) : color(col), intensity(inte) {}
 };
@@ -56,6 +56,8 @@ struct WorldObject {
     RenderMath::Vec3D worldPos;
     RenderMath::Vec3D RelatetiveOffset;
     RenderMath::Vec3D scale;
+    MeshData meshData;
+    Texture texture;
 
     WorldObject() 
         : worldPos(0.f, 0.f, 0.f), RelatetiveOffset(0.f, 0.f, 0.f), scale(1.f, 1.f, 1.f) {}

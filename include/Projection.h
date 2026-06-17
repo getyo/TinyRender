@@ -14,8 +14,6 @@ private:
     inline static bool isInit = false;
     // 世界坐标资产位置
     RenderMath::Vec3D cameraPos;
-    RenderMath::Vec3D objPos;
-    RenderMath::Vec3D objOffset;
     RenderMath::Vec3D lightPos;
 
     //变化矩阵，其中ViewTransform需要随摄像机以及跟随对象跟新
@@ -24,9 +22,7 @@ private:
     RenderMath::Mat4D PerspectiveProjection;
     
 
-    Projection(const RenderMath::Vec3D& cameraPos,const RenderMath::Vec3D& lightPos,\
-    const RenderMath::Vec3D& objPos,const RenderMath::Vec3D& objOffset):cameraPos(cameraPos), objPos(objPos), lightPos(lightPos),\
-    objOffset(objOffset)
+    Projection(const RenderMath::Vec3D& cameraPos,const RenderMath::Vec3D& lightPost):cameraPos(cameraPos), lightPos(lightPos)
     {
         float tanHalfFov = tanf(SightConeRad / 2.0f);
         PerspectiveProjection = RenderMath::Mat4D(
@@ -42,10 +38,11 @@ private:
 
 public:
     static std::shared_ptr<Projection> ProjectionFactory(const RenderMath::Vec3D &cameraPos,
-    const RenderMath::Vec3D &lightPos,const RenderMath::Vec3D &objPos,const RenderMath::Vec3D& objOffset){
+    const RenderMath::Vec3D &lightPos)
+    {
         if(isInit) return nullptr;
         isInit = true;
-        return std::shared_ptr<Projection>(new Projection(cameraPos,lightPos,objPos,objOffset));
+        return std::shared_ptr<Projection>(new Projection(cameraPos,lightPos));
     }
 
     void SetCameraPos(const RenderMath::Vec3D &newPos){
@@ -54,9 +51,6 @@ public:
     void SetLightPos(const RenderMath::Vec3D &newPos){
         lightPos = newPos;
     }
-    void SetObjPos(const RenderMath::Vec3D &newPos){
-        objPos = newPos;
-    }
 
-    void Project(std::vector<Vertex> &,const std::vector<Triangle>&);
+    void Project(WorldObject &worldObj);
 };

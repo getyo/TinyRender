@@ -1,6 +1,9 @@
 #include "Shader.h"
 #include <algorithm>
 
+/*Shader需要用到的片元属性如下
+*ORM,BaseColor,Normal,WorldPos
+*/
 std::vector<Color> Shader::Shading(std::vector<Fragment> &fragments){
     int size= fragments.size();
     std::vector<Color> finalColor(size);
@@ -14,13 +17,18 @@ std::vector<Color> Shader::Shading(std::vector<Fragment> &fragments){
     for(int i = 0;i < size;++i){
         Fragment& frag = fragments[i];
         if(frag.trianglePtr == -1){
-            finalColor[i] = Colors::Grey;
+            finalColor[i] = BackGroundColor;
 #ifdef __DEBUG__
-            diffuseLightFin[i] = Colors::Grey;
-            specularLightFin[i] = Colors::Grey;
-            directLightFin[i] = Colors::Grey;
-            ambLightFin[i] = Colors::Grey;
+            diffuseLightFin[i] = BackGroundColor;
+            specularLightFin[i] = BackGroundColor;
+            directLightFin[i] = BackGroundColor;
+            ambLightFin[i] = BackGroundColor;
 #endif
+           continue;
+        }
+        //如果是画出来的线，不计算光照
+        if(!frag.standardUV.Length()){
+            finalColor[i] = frag.color;        
             continue;
         }
         //finalColor[i] = frag.color;

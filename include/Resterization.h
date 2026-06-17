@@ -72,7 +72,7 @@ public:
         isInit = true;
         return std::shared_ptr<Rasterization>(new Rasterization());
     }
-    void Rasterize(std::vector<Fragment>&, WorldObject &worldObj);
+    void Rasterize(std::vector<Fragment>&, std::vector<WorldObject> &worldObjs);
 #ifdef __DEBUG__
     std::vector<RenderMath::Vec3D> normalFin;
     std::vector<RenderMath::Vec3D> baseColorFin;

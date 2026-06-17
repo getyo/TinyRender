@@ -22,7 +22,6 @@ struct Triangle
 {
     //三个顶点在顶点数组的索引
     int vertexIndex[3];
-    int textureId;
 };
 
 struct MeshData

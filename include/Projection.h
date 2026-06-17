@@ -52,5 +52,5 @@ public:
         lightPos = newPos;
     }
 
-    void Project(WorldObject &worldObj);
+    void Project(WorldObject &worldObj,bool doModelTran = true);
 };

@@ -59,8 +59,8 @@ bool FileManager::ReadMeshData(const std::string filePath, MeshData& meshData) {
         auto& curTriangle = meshData.triangles[j / 3];
             
         // 防御未指定材质的 -1 边界情况
-        int matId = shapes[0].mesh.material_ids[j / 3];
-            curTriangle.textureId = (matId < 0) ? 0 : matId;
+        //int matId = shapes[0].mesh.material_ids[j / 3];
+        //    curTriangle.textureId = (matId < 0) ? 0 : matId;
             
         for (int k = 0; k < 3; ++k) {
             int globalIdx = j + k;

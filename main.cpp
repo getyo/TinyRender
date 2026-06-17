@@ -8,30 +8,35 @@
 
 int main(){
     //设置相机，点光源，物体位置
-    Camera camera({0,0,0},{0,0,1});
-    PointLight light({0,-100,50},{Colors::White},20.f);
-    WorldObject sword({0,50,100},{0,-30,0});
+    Camera camera({100,30.f,0},{0,0,1});
+    PointLight light({0,100,50},{Colors::White},20.f);
     AmbientLight ambLight(Colors::White,0.1f);
+    std::vector<WorldObject> objs;
     //读取模型和贴图
-    FileManager::ReadMeshData("input/SM_Weapon.OBJ",sword.meshData);
+    /*
+    objs.push_back(WorldObject("Sword",{0,50,100},{0,-30,0}));
+    FileManager::ReadMeshData("input/SM_Weapon.OBJ",objs[0].meshData);
     FileManager::ReadTexture("Input\\T_IronWeapon_2_Normal.PNG",\
         "Input\\T_IronWeapon_2_BaseColor.PNG",\
         "Input\\T_IronWeapon_2_OcclusionRoughnessMetallic.PNG",
-        sword.texture
+        objs[0].texture
     );
+    */
+    objs.push_back(WorldObject::MakeGround());
     
     //渲染管线开启
     //1. 投影 
     //输入：顶点，三角形
     //输出：带有投影位置，以及tbn的顶点 
     auto proj = Projection::ProjectionFactory(camera.worldPos,light.worldPos);
-    proj->Project(sword);
+    for(auto &obj:objs)
+        proj->Project(obj,false);
     //2. 光栅化插值
     //输入：上一步输出的顶点，三角形，basecolor，orm，normal三张贴图组成的纹理
     //输出：插值完的片元
     auto rester = Rasterization::RasterizationFactory();
     std::vector<Fragment> fragments;
-    rester->Rasterize(fragments,sword);
+    rester->Rasterize(fragments,objs);
     //3. shader光照处理
     //输入：上一步输出的片元，以及全局摄像机，物体，环境光
     //输出：归一化的颜色

@@ -1,7 +1,7 @@
 #include "Projection.h"
 #include <cassert>
 
-void Projection::Project(WorldObject &worldObj){
+void Projection::Project(WorldObject &worldObj,bool doModelTran){
     //求解摄像机视角变化
     ViewTransform = RenderMath::LookAt(cameraPos,worldObj.worldPos,{0,1,0});
     //变化到标准空间的矩阵
@@ -11,8 +11,10 @@ void Projection::Project(WorldObject &worldObj){
     for(auto &v:vertices){
         
         //投影位置计算
-        auto m = ModelTransform; 
-        v.pos3D = m.ToMat3D()* v.pos3D;
+        if(doModelTran){
+            auto m = ModelTransform; 
+            v.pos3D = m.ToMat3D()* v.pos3D;
+        }
         v.pos3D = v.pos3D + worldObj.worldPos + worldObj.RelatetiveOffset;
         RenderMath::Vec4D worldPos(v.pos3D, 1.0f);
         v.posProj = M * worldPos;

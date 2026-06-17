@@ -15,12 +15,13 @@ private:
     Shader(Camera camera,PointLight lightSource,AmbientLight ambLight):camera(camera),lightSource(lightSource),
     ambLight(ambLight){}
 public:
-#ifdef __DEBUG__
+    #ifdef __DEBUG__
     std::vector<Color> directLightFin;
     std::vector<Color> ambLightFin;
     std::vector<Color> diffuseLightFin;
     std::vector<Color> specularLightFin;
-#endif
+    #endif
+    Color BackGroundColor = Colors::Black;
 
     static std::shared_ptr<Shader> ShaderFactory(Camera camera,PointLight lightSource,AmbientLight ambLight){
         if(isInit) return nullptr;

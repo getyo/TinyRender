@@ -20,6 +20,7 @@ public:
     std::vector<Color> ambLightFin;
     std::vector<Color> diffuseLightFin;
     std::vector<Color> specularLightFin;
+    std::vector<Color> shadowFin;
     #endif
     Color BackGroundColor = Colors::Black;
 

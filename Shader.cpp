@@ -12,6 +12,7 @@ std::vector<Color> Shader::Shading(std::vector<Fragment> &fragments){
     specularLightFin.resize(size);
     directLightFin.resize(size);
     ambLightFin.resize(size);
+    shadowFin.resize(size);
 #endif
     int totalFrag = 0,specularFrag = 0;
     for(int i = 0;i < size;++i){
@@ -59,12 +60,13 @@ std::vector<Color> Shader::Shading(std::vector<Fragment> &fragments){
         float safeAO = frag.orm.occlusion <= 0 ? 0.1:frag.orm.occlusion;
         auto ambLightPerFrag = ambLight.color.ToVec3D() * frag.color * ambLight.intensity * safeAO;
         //6. 最终颜色 = 直射光+环境光
-        finalColor[i] = ambLightPerFrag + directLight;
+        finalColor[i] = frag.shadowFactor * (ambLightPerFrag + directLight);
 #ifdef __DEBUG__
         diffuseLightFin[i] = diffuseLight;
         specularLightFin[i] = specularLight;
         directLightFin[i] = directLight;
         ambLightFin[i] = ambLightPerFrag;
+        shadowFin[i] = Color(frag.shadowFactor,0,0);
         if(specularLight.Length()) ++specularFrag;
 #endif
         

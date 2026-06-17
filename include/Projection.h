@@ -21,9 +21,10 @@ private:
     //其他两者在屏幕不变的情况下不变
     RenderMath::Mat4D ViewTransform;
     RenderMath::Mat4D PerspectiveProjection;
-    
 
-    Projection(const RenderMath::Vec3D& cameraPos,const RenderMath::Vec3D& lightPost,const RenderMath::Vec3D targetPos):cameraPos(cameraPos), \
+    
+    
+    Projection(const RenderMath::Vec3D& cameraPos,const RenderMath::Vec3D& lightPos,const RenderMath::Vec3D targetPos):cameraPos(cameraPos), \
     lightPos(lightPos), targetPos(targetPos)
     {
         float tanHalfFov = tanf(SightConeRad / 2.0f);
@@ -34,25 +35,28 @@ private:
             RenderMath::Vec4D(0.0f, 0.0f, -(FarClip + NearClip) / (FarClip - NearClip), -1.0f),
             RenderMath::Vec4D(0.0f, 0.0f, -(2.0f * FarClip * NearClip) / (FarClip - NearClip), 0.0f)
         );
-
-      
+        
+        
     }
-
-public:
+    
+    public:
+    inline static RenderMath::Mat4D LightTrans;
     static std::shared_ptr<Projection> ProjectionFactory(const RenderMath::Vec3D &cameraPos,
-    const RenderMath::Vec3D &lightPos,const RenderMath::Vec3D targetPos)
-    {
-        if(isInit) return nullptr;
-        isInit = true;
-        return std::shared_ptr<Projection>(new Projection(cameraPos,lightPos,targetPos));
-    }
-
-    void SetCameraPos(const RenderMath::Vec3D &newPos){
-        cameraPos = newPos;
-    }
-    void SetLightPos(const RenderMath::Vec3D &newPos){
-        lightPos = newPos;
-    }
-
-    void Project(WorldObject &worldObj,bool doModelTran = true);
-};
+        const RenderMath::Vec3D &lightPos,const RenderMath::Vec3D targetPos)
+        {
+            if(isInit) return nullptr;
+            isInit = true;
+            return std::shared_ptr<Projection>(new Projection(cameraPos,lightPos,targetPos));
+        }
+        
+        void SetCameraPos(const RenderMath::Vec3D &newPos){
+            cameraPos = newPos;
+        }
+        void SetLightPos(const RenderMath::Vec3D &newPos){
+            lightPos = newPos;
+        }
+        
+        void Project(WorldObject &worldObj,bool doModelTran = true);
+        void ShadowProj(WorldObject &worldObj,bool doModelTran = true);
+    };
+    

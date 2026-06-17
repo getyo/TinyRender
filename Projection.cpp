@@ -82,3 +82,26 @@ void Projection::Project(WorldObject &worldObj,bool doModelTran){
         v.bitangent = stdB * w; 
     }
 }
+
+void Projection::ShadowProj(WorldObject &worldObj,bool doModelTran)
+{
+    LightTrans = RenderMath::LookAt(lightPos,targetPos,{0,1,0});
+    //变化到光源空间的矩阵
+    LightTrans = PerspectiveProjection * LightTrans;
+    auto &vertices = worldObj.meshData.vertices;
+    auto &triangles = worldObj.meshData.triangles;
+    for(auto &v:vertices){
+        
+        auto pos3D = v.pos3D;
+        //投影位置计算
+        if(doModelTran){
+            auto m = ModelTransform; 
+            pos3D = m.ToMat3D()* pos3D;
+        }
+        pos3D = pos3D + worldObj.worldPos + worldObj.RelatetiveOffset;
+        RenderMath::Vec4D worldPos(pos3D, 1.0f);
+        v.lightProj = LightTrans * worldPos;
+        int a = 0; 
+    }
+
+}

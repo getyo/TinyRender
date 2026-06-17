@@ -3,6 +3,7 @@
 #include <cmath>
 #include <iostream>
 #include <cassert>
+#include "Projection.h"
 
 void Rasterization::Rasterize(std::vector<Fragment> &fragments, std::vector<WorldObject> &worldObjs)
 {
@@ -138,24 +139,45 @@ void Rasterization::Rasterize(std::vector<Fragment> &fragments, std::vector<Worl
 
             // 世界位置坐标插值
             curFragment.worldPos = curFragment.bcCoor.a * (1 / v0->posProj.w * v0->pos3D) +
-                                   curFragment.bcCoor.b * (1 / v1->posProj.w * v1->pos3D) +
-                                   curFragment.bcCoor.c * (1 / v2->posProj.w * v2->pos3D);
+            curFragment.bcCoor.b * (1 / v1->posProj.w * v1->pos3D) +
+            curFragment.bcCoor.c * (1 / v2->posProj.w * v2->pos3D);
             curFragment.worldPos = 1 / curFragment.w * curFragment.worldPos;
+
+            // 更新阴影
+            RenderMath::Vec4D lightPos = Projection::LightTrans  * RenderMath::Vec4D(curFragment.worldPos, 1.f);
+            if (lightPos.w > 0)
+            {
+                lightPos = lightPos / lightPos.w;
+                float lightZ = lightPos.z;
+                lightPos = ViewportTransform * lightPos;
+                int shadowDepthIt = std::floor(lightPos.y) * ScreenWidth + std::floor(lightPos.x);
+                if (shadowDepthIt > screenSize) 
+                    curFragment.shadowFactor = 1.f;
+                else if ((lightZ -shadowDepth[shadowDepthIt]) > 1e-3) 
+                    curFragment.shadowFactor = MinShadowFactor;
+                else 
+                    curFragment.shadowFactor = 1.f;
+            }
+            else
+            {
+                curFragment.shadowFactor = 1.f;
+            }
+            
             if (worldObjs[curFragment.objId].isDrawn)
             {
                 curFragment.normal = WorldUpVec;
                 curFragment.orm = WorldObject::GroundORM;
                 curFragment.isDrawn = true;
                 if (WorldObject::InGroundLine(curFragment.worldPos, v0->pos3D, v1->pos3D, v2->pos3D))
-                    curFragment.color = WorldObject::GroundLineColor;
+                curFragment.color = WorldObject::GroundLineColor;
                 else
-                    curFragment.color = WorldObject::GroundBlankColor;
+                curFragment.color = WorldObject::GroundBlankColor;
             }
             else
             {
                 // 插值纹理坐标到标准空间
                 float us = curFragment.bcCoor.a * (v0->textureUV.x / v0->posProj.w) +
-                           curFragment.bcCoor.b * (v1->textureUV.x / v1->posProj.w) +
+                curFragment.bcCoor.b * (v1->textureUV.x / v1->posProj.w) +
                            curFragment.bcCoor.c * (v2->textureUV.x / v2->posProj.w);
                 us /= curFragment.w;
                 float vs = curFragment.bcCoor.a * (v0->textureUV.y / v0->posProj.w) +
@@ -227,7 +249,7 @@ void Rasterization::Rasterize(std::vector<Fragment> &fragments, std::vector<Worl
     return;
 }
 
-void Rasterization::CutTriangle(int trianglePtr,int objId, const MeshData &meshData)
+void Rasterization::CutTriangle(int trianglePtr, int objId, const MeshData &meshData)
 {
     auto &t = meshData.triangles[trianglePtr];
     std::vector<int> outputVIt;
@@ -301,4 +323,78 @@ Vertex Rasterization::LerpVertex(const Vertex &insideV, const Vertex &outsideV)
     v.tangent = s * outsideV.tangent + (1.0f - s) * insideV.tangent;
     v.textureUV = s * outsideV.textureUV + (1.0f - s) * insideV.textureUV;
     return v;
+}
+
+void Rasterization::MakeShadow(std::vector<WorldObject> &worldObjs)
+{
+    int screenSize = ScreenWidth * ScreenHeight;
+    int objCnt = worldObjs.size();
+    cutTriStore.resize(objCnt);
+    shadowDepth.resize(screenSize);
+
+    for (int i = 0; i < ScreenWidth * ScreenHeight; ++i)
+    {
+        shadowDepth[i] = std::numeric_limits<float>::max();
+    }
+    for (int objIt = 0; objIt < objCnt; ++objIt)
+    {
+        auto &worldObj = worldObjs[objIt];
+        auto &vertices = worldObj.meshData.vertices;
+        auto &triangles = worldObj.meshData.triangles;
+        auto &texture = worldObj.texture;
+        int triCnt = triangles.size();
+
+        for (int it = 0; it < triCnt; ++it)
+        {
+            Vertex *v0, *v1, *v2;
+            v0 = &vertices[triangles[it].vertexIndex[0]];
+            v1 = &vertices[triangles[it].vertexIndex[1]];
+            v2 = &vertices[triangles[it].vertexIndex[2]];
+            
+         
+
+            if ((v0->lightProj.w < 0 || v1->lightProj.w < 0 || v2->lightProj.w < 0))
+            {
+                continue;
+            }
+            RenderMath::Vec4D v0Pos4D = v0->lightProj / v0->lightProj.w;
+            v0Pos4D = ViewportTransform * v0Pos4D;
+            RenderMath::Vec4D v1Pos4D = v1->lightProj / v1->lightProj.w;
+            v1Pos4D = ViewportTransform * v1Pos4D;
+            RenderMath::Vec4D v2Pos4D = v2->lightProj / v2->lightProj.w;
+            v2Pos4D = ViewportTransform * v2Pos4D;
+            RenderMath::Vec2D v0Pos(v0Pos4D.x, v0Pos4D.y);
+            RenderMath::Vec2D v1Pos(v1Pos4D.x, v1Pos4D.y);
+            RenderMath::Vec2D v2Pos(v2Pos4D.x, v2Pos4D.y);
+            BoundingBox box = BoundingBox::GetBoundingBox(v0Pos, v1Pos, v2Pos);
+            // 不渲染在屏幕外的点
+            box.top = std::max(0, box.top);
+            box.bottom = std::min(ScreenHeight - 1, static_cast<float>(box.bottom));
+            box.left = std::max(0, box.left);
+            box.right = std::min(ScreenWidth - 1, static_cast<float>(box.right));
+
+            for (int i = box.top; i <= box.bottom; ++i)
+            {
+                for (int j = box.left; j <= box.right; ++j)
+                {
+                    RenderMath::Vec2D fragmentPos(j + 0.5, i + 0.5);
+                    BarycentricCoord tempBcCoor = BarycentricCoord::GetBarycentricOfP(fragmentPos, v0Pos, v1Pos, v2Pos);
+                    if (tempBcCoor.a >= 0 && tempBcCoor.b >= 0 && tempBcCoor.c >= 0)
+                    {
+
+                        float tempW = tempBcCoor.a * (1.0f / v0->lightProj.w) +
+                                      tempBcCoor.b * (1.0f / v1->lightProj.w) +
+                                      tempBcCoor.c * (1.0f / v2->lightProj.w);
+                        float tempDepth = (v0->lightProj.z / v0->lightProj.w) * tempBcCoor.a +
+                                          (v1->lightProj.z / v1->lightProj.w) * tempBcCoor.b +
+                                          (v2->lightProj.z / v2->lightProj.w) * tempBcCoor.c;
+                        if (tempDepth < shadowDepth[i * ScreenWidth + j])
+                        {
+                           shadowDepth[i * ScreenWidth + j] = tempDepth;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

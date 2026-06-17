@@ -7,7 +7,7 @@
 #include "stb_image_write.h"
 
 void FocusOnShield(Camera& camera,RenderMath::Vec3D& cameraLookAt){
-    camera.worldPos = RenderMath::Vec3D(-20,80,-20);
+    camera.worldPos = RenderMath::Vec3D(-150,100,-150);
     cameraLookAt = RenderMath::Vec3D(-100,0,-100);
 }
 
@@ -18,7 +18,7 @@ void FocusOnSword(Camera& camera,RenderMath::Vec3D& cameraLookAt){
 
 int main(){
     //设置相机，点光源，物体位置
-    Camera camera({-20,80,-20},{0,0,1});
+    Camera camera({150,150,150},{0,0,1});
     PointLight light({150,150,150},{Colors::White},8.f);
     AmbientLight ambLight(Colors::White,0.15f);
     std::vector<WorldObject> objs;
@@ -42,8 +42,8 @@ int main(){
     FileManager::LoadObject(objs[objs.size()-1],shieldObjFile,shieldNormal,shieldBaseColor,shieldMeta);
    
     RenderMath::Vec3D cameraLookAt;
-    FocusOnSword(camera,cameraLookAt);
-    //FocusOnShield(camera,cameraLookAt);
+    //FocusOnSword(camera,cameraLookAt);
+    FocusOnShield(camera,cameraLookAt);
 
     //渲染管线开启
     //1. 投影 
@@ -53,15 +53,22 @@ int main(){
     int objCnt = objs.size();
     for(int i = 0;i < objCnt;++i)
     {
-        if(objs[i].isDrawn) proj->Project(objs[i],false);
-        else proj->Project(objs[i],true);
+        if(objs[i].isDrawn) {
+            proj->ShadowProj(objs[i],false);
+            proj->Project(objs[i],false);
+        }
+        else {
+            proj->ShadowProj(objs[i],true);
+            proj->Project(objs[i],true);
+        }
     }
     //2. 光栅化插值
     //输入：上一步输出的顶点，三角形，basecolor，orm，normal三张贴图组成的纹理
     //输出：插值完的片元
-    auto rester = Rasterization::RasterizationFactory();
+    auto raster = Rasterization::RasterizationFactory();
     std::vector<Fragment> fragments;
-    rester->Rasterize(fragments,objs);
+    raster->MakeShadow(objs);
+    raster->Rasterize(fragments,objs);
     //3. shader光照处理
     //输入：上一步输出的片元，以及全局摄像机，物体，环境光
     //输出：归一化的颜色
@@ -71,9 +78,10 @@ int main(){
     //4. 输出图片
     FileManager::WritePNG("Output/Output.png",finalColor);
 #ifdef __DEBUG__
-    FileManager::WritePNGLinear("Output/Normal.png",rester->normalFin);
-    FileManager::WritePNGLinear("Output/BaseColor.png",rester->baseColorFin);
-    FileManager::WritePNG("Output/ORM.png",rester->ormFin);
+    FileManager::WritePNGLinear("Output/Normal.png",raster->normalFin);
+    FileManager::WritePNGLinear("Output/BaseColor.png",raster->baseColorFin);
+    FileManager::WritePNG("Output/ORM.png",raster->ormFin);
+    FileManager::WritePNG("Output/Shadow.png",shader->shadowFin);
     FileManager::WritePNG("Output/DirectLight.png",shader->directLightFin);
     FileManager::WritePNG("Output/DiffuseLight.png",shader->diffuseLightFin);
     FileManager::WritePNG("Output/SpecularLight.png",shader->specularLightFin);

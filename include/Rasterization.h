@@ -41,6 +41,7 @@ struct Fragment{
     BarycentricCoord bcCoor;
     int objId;
     bool isDrawn = false; 
+    float shadowFactor;
 };
 struct BoundingBox{
     int left;
@@ -65,6 +66,7 @@ class Rasterization{
 private:
     inline static bool isInit = false;
     std::vector<MeshData> cutTriStore;
+    std::vector<float> shadowDepth;
     Rasterization() = default;
     void CutTriangle(int triangleIt,int objId,const MeshData&);
     Vertex LerpVertex(const Vertex &curV,const Vertex&nextV);
@@ -75,6 +77,7 @@ public:
         return std::shared_ptr<Rasterization>(new Rasterization());
     }
     void Rasterize(std::vector<Fragment>&, std::vector<WorldObject> &worldObjs);
+    void MakeShadow(std::vector<WorldObject> &worldObjs);
 #ifdef __DEBUG__
     std::vector<RenderMath::Vec3D> normalFin;
     std::vector<RenderMath::Vec3D> baseColorFin;

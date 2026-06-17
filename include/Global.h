@@ -4,6 +4,8 @@
 #define __DEBUG__
 // 基本全局参数
 const RenderMath::Vec3D WorldUpVec = RenderMath::Vec3D(0.f,1.f,0.f); 
+//阴影相关
+constexpr float MinShadowFactor = 0.1;
 //长度单位 cm
 //摄像机成像参数，所有相机用这一套
 constexpr float NearClip = 30.f;

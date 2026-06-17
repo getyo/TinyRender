@@ -18,7 +18,7 @@ void FocusOnSword(Camera& camera,RenderMath::Vec3D& cameraLookAt){
 
 int main(){
     //设置相机，点光源，物体位置
-    Camera camera({150,150,150},{0,0,1});
+    Camera camera({50,50,50},{0,0,1});
     PointLight light({150,150,150},{Colors::White},8.f);
     AmbientLight ambLight(Colors::White,0.15f);
     std::vector<WorldObject> objs;
@@ -42,8 +42,8 @@ int main(){
     FileManager::LoadObject(objs[objs.size()-1],shieldObjFile,shieldNormal,shieldBaseColor,shieldMeta);
    
     RenderMath::Vec3D cameraLookAt;
-    //FocusOnSword(camera,cameraLookAt);
-    FocusOnShield(camera,cameraLookAt);
+    FocusOnSword(camera,cameraLookAt);
+    //FocusOnShield(camera,cameraLookAt);
 
     //渲染管线开启
     //1. 投影 

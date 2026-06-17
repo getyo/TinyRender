@@ -312,17 +312,52 @@ Vertex Rasterization::LerpVertex(const Vertex &insideV, const Vertex &outsideV)
     if (s > 1.0f)
         s = 1.0f;
 
-    Vertex v;
-    v.posProj = s * outsideV.posProj + (1.0f - s) * insideV.posProj;
+    Vertex vNew;
+    vNew.posProj = s * outsideV.posProj + (1.0f - s) * insideV.posProj;
     // 避免后续透视除法出问题
-    if (v.posProj.w <= 0.0f)
-        v.posProj.w = EPSILON;
+    if (vNew.posProj.w <= 0.0f)
+        vNew.posProj.w = EPSILON;
 
-    v.pos3D = s * outsideV.pos3D + (1.0f - s) * insideV.pos3D;
-    v.normal = s * outsideV.normal + (1.0f - s) * insideV.normal;
-    v.tangent = s * outsideV.tangent + (1.0f - s) * insideV.tangent;
-    v.textureUV = s * outsideV.textureUV + (1.0f - s) * insideV.textureUV;
-    return v;
+    vNew.pos3D = s * outsideV.pos3D + (1.0f - s) * insideV.pos3D;
+    float invW_in  = 1.0f / insideV.posProj.w;
+    float invW_out = 1.0f / outsideV.posProj.w;
+
+    // 计算新顶点精确的 1/w (1/w 在齐次空间是线性变化的)
+    float invW_new = invW_in + (invW_out - invW_in) * s;
+    // 得到新顶点在相机视锥体空间里真正的非线性权重 W
+    float w_new = 1.0f / invW_new; 
+
+    // 对所有属性执行 [属性/w] 的齐次线性插值，再乘以新顶点的 w 还原
+    // 公式：Attribute_New = ( (Attr_in / w_in) * (1-s) + (Attr_out / w_out) * s ) * w_new
+    
+    // --- 插值 TextureUV ---
+    RenderMath::Vec2D uvOverW_in  = insideV.textureUV * invW_in;
+    RenderMath::Vec2D uvOverW_out = outsideV.textureUV * invW_out;
+    RenderMath::Vec2D uvOverW_new = uvOverW_in + (uvOverW_out - uvOverW_in) * s;
+    vNew.textureUV = uvOverW_new * w_new;
+
+    // --- 插值 Normal ---
+    RenderMath::Vec3D nOverW_in  = insideV.normal * invW_in;
+    RenderMath::Vec3D nOverW_out = outsideV.normal * invW_out;
+    RenderMath::Vec3D nOverW_new = nOverW_in + (nOverW_out - nOverW_in) * s;
+    vNew.normal = RenderMath::Normalize(nOverW_new * w_new); // 还原后记得重新单位化
+
+    // --- 插值 Tangent ---
+    RenderMath::Vec3D tOverW_in  = insideV.tangent * invW_in;
+    RenderMath::Vec3D tOverW_out = outsideV.tangent * invW_out;
+    RenderMath::Vec3D tOverW_new = tOverW_in + (tOverW_out - tOverW_in) * s;
+    vNew.tangent = RenderMath::Normalize(tOverW_new * w_new);
+
+    // --- 插值 Bitangent ---
+    RenderMath::Vec3D bOverW_in  = insideV.bitangent * invW_in;
+    RenderMath::Vec3D bOverW_out = outsideV.bitangent * invW_out;
+    RenderMath::Vec3D bOverW_new = bOverW_in + (bOverW_out - bOverW_in) * s;
+    vNew.bitangent = RenderMath::Normalize(bOverW_new * w_new);
+
+    vNew.normal = s * outsideV.normal + (1.0f - s) * insideV.normal;
+    vNew.tangent = s * outsideV.tangent + (1.0f - s) * insideV.tangent;
+    vNew.textureUV = s * outsideV.textureUV + (1.0f - s) * insideV.textureUV;
+    return vNew;
 }
 
 void Rasterization::MakeShadow(std::vector<WorldObject> &worldObjs)

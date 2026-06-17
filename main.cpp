@@ -1,7 +1,7 @@
 #include <iostream>
 #include "Projection.h"
 #include "FlieManager.h"
-#include "Resterization.h"
+#include "Rasterization.h"
 #include "Shader.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"

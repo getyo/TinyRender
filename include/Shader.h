@@ -1,7 +1,7 @@
 #pragma once
 #include "RenderMath.h"
 #include "Vertex.h"
-#include "Resterization.h"
+#include "Rasterization.h"
 #include "Global.h"
 #include <memory>
 

@@ -53,8 +53,6 @@ struct BoundingBox{
         box.right = std::max({ceil(v0Pos.x),ceil(v1Pos.x),ceil(v2Pos.x)});
         box.top = std::min({floor(v0Pos.y),floor(v1Pos.y),floor(v2Pos.y)});
         box.bottom = std::max({ceil(v0Pos.y),ceil(v1Pos.y),ceil(v2Pos.y)});
-        if(box.right >= ScreenWidth) box.right = ScreenWidth -1;
-        if(box.bottom >= ScreenHeight) box.bottom = ScreenHeight - 1;
         return box;
     }
 };
@@ -66,6 +64,8 @@ class Rasterization{
 private:
     inline static bool isInit = false;
     Rasterization() = default;
+    void CutTriangle(int triangleIt,MeshData&);
+    Vertex LerpVertex(const Vertex &curV,const Vertex&nextV);
 public:
     static std::shared_ptr<Rasterization> RasterizationFactory(){
         if(isInit) return nullptr;

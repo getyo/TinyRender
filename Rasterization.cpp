@@ -1,4 +1,4 @@
-#include "Resterization.h"
+#include "Rasterization.h"
 #include "Global.h"
 #include <cmath>
 #include <iostream>
@@ -28,9 +28,13 @@ void Rasterization::Rasterize(std::vector<Fragment> &fragments, std::vector<Worl
             auto &v0 = vertices[triangles[it].vertexIndex[0]];
             auto &v1 = vertices[triangles[it].vertexIndex[1]];
             auto &v2 = vertices[triangles[it].vertexIndex[2]];
-            //暂且这么简单处理近平面剪切
-            if(v0.posProj.w < 0 || v1.posProj.w < 0 || v2.posProj.w < 0)
+            //没一个顶点在，直接全剪掉
+            if(v0.posProj.w < 0 && v1.posProj.w < 0 && v2.posProj.w < 0)
                 continue;
+            else if(v0.posProj.w < 0 || v1.posProj.w < 0 || v2.posProj.w < 0){
+                CutTriangle(it,worldObj.meshData);
+                continue;
+            }
             RenderMath::Vec4D v0Pos4D = v0.posProj / v0.posProj.w;
             v0Pos4D = ViewportTransform * v0Pos4D; 
             RenderMath::Vec4D v1Pos4D = v1.posProj / v1.posProj.w;
@@ -40,10 +44,12 @@ void Rasterization::Rasterize(std::vector<Fragment> &fragments, std::vector<Worl
             RenderMath::Vec2D v0Pos(v0Pos4D.x ,v0Pos4D.y);
             RenderMath::Vec2D v1Pos(v1Pos4D.x ,v1Pos4D.y );
             RenderMath::Vec2D v2Pos(v2Pos4D.x ,v2Pos4D.y );
-            //不渲染在屏幕外的点
-            if(!InScreen(v0Pos) || !InScreen(v1Pos) || !InScreen(v2Pos))
-                continue;
             BoundingBox box = BoundingBox::GetBoundingBox(v0Pos, v1Pos, v2Pos);
+            //不渲染在屏幕外的点
+            box.top    = std::max(0, box.top);
+            box.bottom = std::min(ScreenHeight - 1, static_cast<float>(box.bottom));
+            box.left   = std::max(0, box.left);
+            box.right  = std::min(ScreenWidth - 1, static_cast<float>(box.right));
             
             for(int i = box.top; i <= box.bottom; ++i){
                 for(int j = box.left; j <= box.right; ++j){
@@ -169,4 +175,66 @@ void Rasterization::Rasterize(std::vector<Fragment> &fragments, std::vector<Worl
     #endif
     }
     return ;
+}
+
+void Rasterization::CutTriangle(int trianglePtr,MeshData& meshData){
+    auto &t = meshData.triangles[trianglePtr];
+    std::vector<int> outputVIt;
+    //裁剪必须解决的顶点属性：
+    //1. 世界空间坐标
+    //2. 透视空间坐标
+    //3. 纹理空间坐标
+    //4. tb二向量
+    for(int i = 0;i < 3;++i){
+        int curVIt = t.vertexIndex[i],nextVIt = t.vertexIndex[(i+1)%3];
+        Vertex& curV = meshData.vertices[curVIt],&nextV = meshData.vertices[nextVIt];
+        //两个顶点都没被剪掉
+        if(curV.posProj.w > 0 && nextV.posProj.w > 0){
+            //保留cur，下同
+            outputVIt.push_back(curVIt);
+        }
+        //next被剪掉
+        else if(curV.posProj.w > 0 && nextV.posProj.w < 0){
+            outputVIt.push_back(curVIt);
+            //在next和cur里面插值一个Vertex
+            meshData.vertices.push_back(LerpVertex(curV,nextV));
+            outputVIt.push_back(meshData.vertices.size()-1);
+        }
+        //cur被剪掉
+        else if(curV.posProj.w < 0 && nextV.posProj.w > 0){
+            meshData.vertices.push_back(LerpVertex(curV,nextV));
+            outputVIt.push_back(meshData.vertices.size()-1);
+        }
+    }
+
+    //生成三角形
+    int size = outputVIt.size();
+    //切了一个角变成小三角
+    if(size == 3){
+        meshData.triangles.push_back({outputVIt[0],outputVIt[1],outputVIt[2]});
+    }
+    else{
+        assert(size == 4 && "Cut triangle failed");
+        meshData.triangles.push_back({outputVIt[0],outputVIt[1],outputVIt[2]});
+        meshData.triangles.push_back({outputVIt[0],outputVIt[2],outputVIt[3]});
+    }
+}
+
+Vertex Rasterization::LerpVertex(const Vertex &curV,const Vertex &nextV){
+    const float EPSILON = 0.0001f;
+    float t = (EPSILON - curV.posProj.w) / (curV.posProj.w - nextV.posProj.w);
+    // 防御性代码：防止浮点数精度误差导致 t 超出 [0, 1] 范围
+    if (t < 0.0f) t = 0.0f;
+    if (t > 1.0f) t = 1.0f;
+
+    Vertex v;
+    v.pos3D = t * curV.pos3D + (1-t) * nextV.pos3D;
+    v.posProj = t * curV.posProj + (1-t) * nextV.posProj;
+    if (v.posProj.w <= 0.0f) {
+        v.posProj.w = EPSILON;
+    }
+    v.normal = t * curV.normal + (1-t) * nextV.normal;
+    v.tangent = t * curV.tangent + (1-t) * nextV.tangent;
+    v.textureUV = t * curV.textureUV + (1-t) * nextV.textureUV;
+    return v;
 }

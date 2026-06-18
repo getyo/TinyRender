@@ -354,9 +354,6 @@ Vertex Rasterization::LerpVertex(const Vertex &insideV, const Vertex &outsideV)
     RenderMath::Vec3D bOverW_new = bOverW_in + (bOverW_out - bOverW_in) * s;
     vNew.bitangent = RenderMath::Normalize(bOverW_new * w_new);
 
-    vNew.normal = s * outsideV.normal + (1.0f - s) * insideV.normal;
-    vNew.tangent = s * outsideV.tangent + (1.0f - s) * insideV.tangent;
-    vNew.textureUV = s * outsideV.textureUV + (1.0f - s) * insideV.textureUV;
     return vNew;
 }
 

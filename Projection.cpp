@@ -1,20 +1,25 @@
 #include "Projection.h"
 #include <cassert>
 
-void Projection::Project(std::vector<Vertex> &vertice,const std::vector<Triangle>& triangles){
+void Projection::Project(WorldObject &worldObj,bool doModelTran){
     //求解摄像机视角变化
-    ViewTransform = RenderMath::LookAt(cameraPos,objPos,{0,1,0});
+    ViewTransform = RenderMath::LookAt(cameraPos,targetPos,{0,1,0});
     //变化到标准空间的矩阵
     RenderMath::Mat4D M = PerspectiveProjection * ViewTransform;
-    for(auto &v:vertice){
+    auto &vertices = worldObj.meshData.vertices;
+    auto &triangles = worldObj.meshData.triangles;
+    for(auto &v:vertices){
         
         //投影位置计算
-        auto m = ModelTransform; 
-        v.pos3D = m.ToMat3D()* v.pos3D;
-        v.pos3D = v.pos3D + objPos + objOffset;
+        if(doModelTran){
+            auto m = ModelTransform; 
+            v.pos3D = m.ToMat3D()* v.pos3D;
+        }
+        v.pos3D = v.pos3D + worldObj.worldPos + worldObj.RelatetiveOffset;
         RenderMath::Vec4D worldPos(v.pos3D, 1.0f);
         v.posProj = M * worldPos;
-        if (v.posProj.w <= 0.0f) continue; 
+
+        if (v.posProj.w < 0.0f) continue; 
 
         //为下一步累加做准备
         v.normal = RenderMath::Vec3D(0,0,0);
@@ -24,9 +29,9 @@ void Projection::Project(std::vector<Vertex> &vertice,const std::vector<Triangle
     
     // 阶段 1：遍历三角形，计算面属性并【累加】到三个顶点
     for(auto &triangle: triangles){
-        auto &v0 = vertice[triangle.vertexIndex[0]];
-        auto &v1 = vertice[triangle.vertexIndex[1]];
-        auto &v2 = vertice[triangle.vertexIndex[2]];
+        auto &v0 = vertices[triangle.vertexIndex[0]];
+        auto &v1 = vertices[triangle.vertexIndex[1]];
+        auto &v2 = vertices[triangle.vertexIndex[2]];
         
         RenderMath::Vec3D edge1 = v1.pos3D - v0.pos3D;
         RenderMath::Vec3D edge2 = v2.pos3D - v0.pos3D;
@@ -60,9 +65,11 @@ void Projection::Project(std::vector<Vertex> &vertice,const std::vector<Triangle
     }
 
     // 阶段 2：遍历顶点，进行正交化
-    for(auto &v : vertice){
+    for(auto &v : vertices){
         // 1. 法线单位化 
         v.normal = RenderMath::Normalize(v.normal);
+        //Model矩阵镜像后需要反转
+        v.normal = v.normal *-1;
 
         // 2. Tangent 施密特正交化
         v.tangent = RenderMath::Normalize(v.tangent - v.normal * RenderMath::DotProduct(v.normal, v.tangent));
@@ -74,4 +81,27 @@ void Projection::Project(std::vector<Vertex> &vertice,const std::vector<Triangle
         float w = (RenderMath::DotProduct(stdB, v.bitangent) < 0.0f) ? -1.0f : 1.0f;
         v.bitangent = stdB * w; 
     }
+}
+
+void Projection::ShadowProj(WorldObject &worldObj,bool doModelTran)
+{
+    LightTrans = RenderMath::LookAt(lightPos,targetPos,{0,1,0});
+    //变化到光源空间的矩阵
+    LightTrans = PerspectiveProjection * LightTrans;
+    auto &vertices = worldObj.meshData.vertices;
+    auto &triangles = worldObj.meshData.triangles;
+    for(auto &v:vertices){
+        
+        auto pos3D = v.pos3D;
+        //投影位置计算
+        if(doModelTran){
+            auto m = ModelTransform; 
+            pos3D = m.ToMat3D()* pos3D;
+        }
+        pos3D = pos3D + worldObj.worldPos + worldObj.RelatetiveOffset;
+        RenderMath::Vec4D worldPos(pos3D, 1.0f);
+        v.lightProj = LightTrans * worldPos;
+        int a = 0; 
+    }
+
 }

@@ -9,6 +9,7 @@ struct Vertex
     RenderMath::Vec2D textureUV;
     //投影之后的坐标,前两项/w之后就是标准屏幕空间坐标
     RenderMath::Vec4D posProj;
+    RenderMath::Vec4D lightProj;
     //法线和法线贴图处理要用的
     RenderMath::Vec3D normal = {0,0,0};
     RenderMath::Vec3D tangent = {0,0,0};
@@ -22,7 +23,6 @@ struct Triangle
 {
     //三个顶点在顶点数组的索引
     int vertexIndex[3];
-    int textureId;
 };
 
 struct MeshData

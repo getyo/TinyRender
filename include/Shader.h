@@ -1,7 +1,7 @@
 #pragma once
 #include "RenderMath.h"
 #include "Vertex.h"
-#include "Resterization.h"
+#include "Rasterization.h"
 #include "Global.h"
 #include <memory>
 
@@ -15,12 +15,14 @@ private:
     Shader(Camera camera,PointLight lightSource,AmbientLight ambLight):camera(camera),lightSource(lightSource),
     ambLight(ambLight){}
 public:
-#ifdef __DEBUG__
+    #ifdef __DEBUG__
     std::vector<Color> directLightFin;
     std::vector<Color> ambLightFin;
     std::vector<Color> diffuseLightFin;
     std::vector<Color> specularLightFin;
-#endif
+    std::vector<Color> shadowFin;
+    #endif
+    Color BackGroundColor = Colors::Black;
 
     static std::shared_ptr<Shader> ShaderFactory(Camera camera,PointLight lightSource,AmbientLight ambLight){
         if(isInit) return nullptr;

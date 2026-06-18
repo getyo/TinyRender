@@ -1,6 +1,9 @@
 #include "Shader.h"
 #include <algorithm>
 
+/*Shader需要用到的片元属性如下
+*ORM,BaseColor,Normal,WorldPos
+*/
 std::vector<Color> Shader::Shading(std::vector<Fragment> &fragments){
     int size= fragments.size();
     std::vector<Color> finalColor(size);
@@ -9,20 +12,23 @@ std::vector<Color> Shader::Shading(std::vector<Fragment> &fragments){
     specularLightFin.resize(size);
     directLightFin.resize(size);
     ambLightFin.resize(size);
+    shadowFin.resize(size);
 #endif
     int totalFrag = 0,specularFrag = 0;
     for(int i = 0;i < size;++i){
         Fragment& frag = fragments[i];
         if(frag.trianglePtr == -1){
-            finalColor[i] = Colors::Grey;
+            finalColor[i] = BackGroundColor;
 #ifdef __DEBUG__
-            diffuseLightFin[i] = Colors::Grey;
-            specularLightFin[i] = Colors::Grey;
-            directLightFin[i] = Colors::Grey;
-            ambLightFin[i] = Colors::Grey;
+            diffuseLightFin[i] = BackGroundColor;
+            specularLightFin[i] = BackGroundColor;
+            directLightFin[i] = BackGroundColor;
+            ambLightFin[i] = BackGroundColor;
 #endif
-            continue;
+           continue;
         }
+        //如果是画出来的线，不计算光照
+        
         //finalColor[i] = frag.color;
         ++totalFrag;
         //1. 前置的常数变量计算
@@ -43,23 +49,24 @@ std::vector<Color> Shader::Shading(std::vector<Fragment> &fragments){
         //2. 直射光：漫反射部分
         auto diffuseLight = diffK * (frag.color.ToVec3D()/RenderMath::PI);
         //3. 直射光：高光部分
-        float NdotH = std::max(-RenderMath::DotProduct(frag.normal, halfAngle), 0.f);
+        float NdotH = std::max(RenderMath::DotProduct(frag.normal, halfAngle), 0.f);
         //float NdotH = std::max(RenderMath::DotProduct(frag.normal, halfAngle), 0.f);
         auto specularLight = spK * spFactor * pow( NdotH, shininess);
 
         //4. 直射光就是两部分在光照能量和角度下的总和
-        auto directLight = lightSource.intensity * std::max(-RenderMath::DotProduct(frag.normal,lightD),0.f) * \
+        auto directLight = lightSource.intensity * std::max(RenderMath::DotProduct(frag.normal,lightD),0.f) * \
                             lightSource.color.ToVec3D() *(diffuseLight + specularLight);
         //5. 环境光
         float safeAO = frag.orm.occlusion <= 0 ? 0.1:frag.orm.occlusion;
         auto ambLightPerFrag = ambLight.color.ToVec3D() * frag.color * ambLight.intensity * safeAO;
         //6. 最终颜色 = 直射光+环境光
-        finalColor[i] = ambLightPerFrag + directLight;
+        finalColor[i] = frag.shadowFactor * (ambLightPerFrag + directLight);
 #ifdef __DEBUG__
         diffuseLightFin[i] = diffuseLight;
         specularLightFin[i] = specularLight;
         directLightFin[i] = directLight;
         ambLightFin[i] = ambLightPerFrag;
+        shadowFin[i] = Color(frag.shadowFactor,0,0);
         if(specularLight.Length()) ++specularFrag;
 #endif
         

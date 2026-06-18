@@ -39,7 +39,9 @@ struct Fragment{
     float depth;
     float w;
     BarycentricCoord bcCoor;
-    
+    int objId;
+    bool isDrawn = false; 
+    float shadowFactor;
 };
 struct BoundingBox{
     int left;
@@ -53,8 +55,6 @@ struct BoundingBox{
         box.right = std::max({ceil(v0Pos.x),ceil(v1Pos.x),ceil(v2Pos.x)});
         box.top = std::min({floor(v0Pos.y),floor(v1Pos.y),floor(v2Pos.y)});
         box.bottom = std::max({ceil(v0Pos.y),ceil(v1Pos.y),ceil(v2Pos.y)});
-        if(box.right >= ScreenWidth) box.right = ScreenWidth -1;
-        if(box.bottom >= ScreenHeight) box.bottom = ScreenHeight - 1;
         return box;
     }
 };
@@ -62,19 +62,34 @@ struct BoundingBox{
 
 
 
-class Resterization{
+class Rasterization{
 private:
     inline static bool isInit = false;
-    Resterization() = default;
+    std::vector<MeshData> cutTriStore;
+    std::vector<float> shadowDepth;
+    Rasterization() = default;
+    void CutTriangle(int triangleIt,int objId,const MeshData&);
+    Vertex LerpVertex(const Vertex &curV,const Vertex&nextV);
 public:
-    static std::shared_ptr<Resterization> RasterizationFactory(){
+    static std::shared_ptr<Rasterization> RasterizationFactory(){
         if(isInit) return nullptr;
         isInit = true;
-        return std::shared_ptr<Resterization>(new Resterization());
+        return std::shared_ptr<Rasterization>(new Rasterization());
     }
-    void Rasterize(std::vector<Fragment>&, std::vector<Vertex> &vertice,const std::vector<Triangle>& triangles,
-        const Texture& texture);
+    void Rasterize(std::vector<Fragment>&, std::vector<WorldObject> &worldObjs);
+    void MakeShadow(std::vector<WorldObject> &worldObjs);
 #ifdef __DEBUG__
+    void GetShadowDepthColor(std::vector<RenderMath::Vec3D>& sc)
+    {
+        int size = shadowDepth.size();
+        sc.resize(size);
+        for(int i = 0;i < size;++i){
+             if(shadowDepth[i] > 1e6) sc[i].x = 0;
+            else sc[i].x = shadowDepth[i];
+            sc[i].y = 0;
+            sc[i].z = 0;
+        }
+    }
     std::vector<RenderMath::Vec3D> normalFin;
     std::vector<RenderMath::Vec3D> baseColorFin;
     std::vector<RenderMath::Vec3D> ormFin;

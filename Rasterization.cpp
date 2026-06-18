@@ -151,9 +151,9 @@ void Rasterization::Rasterize(std::vector<Fragment> &fragments, std::vector<Worl
                 float lightZ = lightPos.z;
                 lightPos = ViewportTransform * lightPos;
                 int shadowDepthIt = std::floor(lightPos.y) * ScreenWidth + std::floor(lightPos.x);
-                if (shadowDepthIt > screenSize) 
+                if (!InScreen(RenderMath::Vec2D(lightPos.x,lightPos.y))) 
                     curFragment.shadowFactor = 1.f;
-                else if ((lightZ -shadowDepth[shadowDepthIt]) > 1e-3) 
+                else if ((lightZ -shadowDepth[shadowDepthIt]) > ShadowThreshold) 
                     curFragment.shadowFactor = MinShadowFactor;
                 else 
                     curFragment.shadowFactor = 1.f;

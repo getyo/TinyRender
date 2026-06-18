@@ -79,6 +79,17 @@ public:
     void Rasterize(std::vector<Fragment>&, std::vector<WorldObject> &worldObjs);
     void MakeShadow(std::vector<WorldObject> &worldObjs);
 #ifdef __DEBUG__
+    void GetShadowDepthColor(std::vector<RenderMath::Vec3D>& sc)
+    {
+        int size = shadowDepth.size();
+        sc.resize(size);
+        for(int i = 0;i < size;++i){
+             if(shadowDepth[i] > 1e6) sc[i].x = 0;
+            else sc[i].x = shadowDepth[i];
+            sc[i].y = 0;
+            sc[i].z = 0;
+        }
+    }
     std::vector<RenderMath::Vec3D> normalFin;
     std::vector<RenderMath::Vec3D> baseColorFin;
     std::vector<RenderMath::Vec3D> ormFin;

@@ -57,10 +57,9 @@ std::vector<Color> Shader::Shading(std::vector<Fragment> &fragments){
         auto directLight = lightSource.intensity * std::max(RenderMath::DotProduct(frag.normal,lightD),0.f) * \
                             lightSource.color.ToVec3D() *(diffuseLight + specularLight);
         //5. 环境光
-        float safeAO = frag.orm.occlusion <= 0 ? 0.1:frag.orm.occlusion;
-        auto ambLightPerFrag = ambLight.color.ToVec3D() * frag.color * ambLight.intensity * safeAO;
+        auto ambLightPerFrag = ambLight.color.ToVec3D() * frag.color * ambLight.intensity * frag.orm.occlusion;
         //6. 最终颜色 = 直射光+环境光
-        finalColor[i] = frag.shadowFactor * (ambLightPerFrag + directLight);
+        finalColor[i] = ambLightPerFrag + frag.shadowFactor * directLight;
 #ifdef __DEBUG__
         diffuseLightFin[i] = diffuseLight;
         specularLightFin[i] = specularLight;

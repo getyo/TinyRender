@@ -42,7 +42,7 @@ int main(){
     FileManager::LoadObject(objs[objs.size()-1],shieldObjFile,shieldNormal,shieldBaseColor,shieldMeta);
    
     RenderMath::Vec3D cameraLookAt(0,0,0);
-    //FocusOnSword(camera,cameraLookAt);
+    FocusOnSword(camera,cameraLookAt);
     //FocusOnShield(camera,cameraLookAt);
 
     //渲染管线开启
